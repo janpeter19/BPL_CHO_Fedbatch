@@ -74,9 +74,9 @@ if platform.system() == 'Windows':
 elif platform.system() == 'Linux':
    print('Linux - run FMU pre-comiled JModelica 2.4')
    fmu_model = 'BPL_CHO_Fedbatch_linux_jm_cs.fmu'    
-   model = load_fmu(fmu_model, log_level=0)
+   model = load_fmu(fmu_model, log_level=7)
    opts = model.simulate_options()
-   opts['silent_mode'] = True
+   opts['silent_mode'] = False
 else:    
    print('There is no FMU for this platform')
 
