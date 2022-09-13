@@ -39,6 +39,7 @@
 # 2022-03-31 - Updated to FMU-explore 0.9.0 - model.reset(), and par(), init()
 # 2022-04-06 - Added a diagram Textbook_3 for protein production and included alpha and beta in parDict
 # 2022-08-29 - Update with FMU-explore 0.9.2 
+# 2022-09-13 - Updated for FMU-explore 0.9.3
 #-------------------------------------------------------------------------------------------------------------------
 
 # Setup framework
@@ -478,13 +479,16 @@ def describe(name, decimals=3):
 
    elif name in ['parts']:
       describe_parts(component_list_minimum)
+      
+   elif name in ['MSL']:
+      describe_MSL()
 
    else:
       describe_general(name, decimals)
 
 #------------------------------------------------------------------------------------------------------------------
 #  General code 
-FMU_explore = 'FMU-explore ver 0.9.2'
+FMU_explore = 'FMU-explore ver 0.9.3'
 #------------------------------------------------------------------------------------------------------------------
 
 # Define function par() for parameter update
@@ -662,7 +666,7 @@ def describe_parts(component_list=[]):
                 finished = True
             else: 
                 i=i+1
-      if name in ['der', 'temp_1']: name = ''
+      if name in ['der', 'temp_1', 'temp_2', 'temp_3', 'temp_4', 'temp_5', 'temp_6', 'temp_7']: name = ''
       return name
     
    variables = list(model.get_model_variables().keys())
@@ -674,6 +678,10 @@ def describe_parts(component_list=[]):
          component_list.append(component)
       
    print(sorted(component_list, key=str.casefold))
+   
+def describe_MSL():
+   """List MSL version and components used"""
+   print('MSL:', model.get('MSL.version')[0],'- used components:', model.get('MSL.usage')[0])
 
 # Describe parameters and variables in the Modelica code
 def describe_general(name, decimals):
