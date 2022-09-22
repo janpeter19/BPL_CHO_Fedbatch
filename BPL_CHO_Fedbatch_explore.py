@@ -40,6 +40,7 @@
 # 2022-04-06 - Added a diagram Textbook_3 for protein production and included alpha and beta in parDict
 # 2022-08-29 - Update with FMU-explore 0.9.2 
 # 2022-09-13 - Updated for FMU-explore 0.9.3
+# 2022-09-22 - Corrected the label of product to MAb
 #-------------------------------------------------------------------------------------------------------------------
 
 # Setup framework
@@ -397,7 +398,7 @@ def newplot(title='Fedbatch cultivation',  plotType='TimeSeries'):
       ax41.set_ylabel('Feed rate [L/h]')
 
       ax42.grid()
-      ax42.set_ylabel('IgG [g/L]')
+      ax42.set_ylabel('mAb []')
 
       ax43.grid()
       ax43.set_ylabel('qP []')
