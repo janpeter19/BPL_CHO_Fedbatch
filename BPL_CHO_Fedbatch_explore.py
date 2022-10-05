@@ -41,6 +41,7 @@
 # 2022-08-29 - Update with FMU-explore 0.9.2 
 # 2022-09-13 - Updated for FMU-explore 0.9.3
 # 2022-09-22 - Corrected the label of product to MAb
+# 2022-10-05 - Updated for FMU-explore 0.9.5 with disp() that do not include extra parameters with parLocation
 #-------------------------------------------------------------------------------------------------------------------
 
 # Setup framework
@@ -489,7 +490,7 @@ def describe(name, decimals=3):
 
 #------------------------------------------------------------------------------------------------------------------
 #  General code 
-FMU_explore = 'FMU-explore ver 0.9.4'
+FMU_explore = 'FMU-explore ver 0.9.5'
 #------------------------------------------------------------------------------------------------------------------
 
 # Define function par() for parameter update
@@ -529,7 +530,7 @@ def disp(name='', decimals=3, mode='short'):
    
    if mode in ['short']:
       k = 0
-      for Location in parLocation.values():
+      for Location in [parLocation[k] for k in parDict.keys()]:
          if name in Location:
             if type(model.get(Location)[0]) != np.bool_:
                print(dict_reverser(parLocation)[Location] , ':', np.round(model.get(Location)[0],decimals))
@@ -546,7 +547,7 @@ def disp(name='', decimals=3, mode='short'):
                   print(parName,':', model.get(parLocation[parName])[0])
    if mode in ['long','location']:
       k = 0
-      for Location in parLocation.values():
+      for Location in [parLocation[k] for k in parDict.keys()]:
          if name in Location:
             if type(model.get(Location)[0]) != np.bool_:       
                print(Location,':', dict_reverser(parLocation)[Location] , ':', np.round(model.get(Location)[0],decimals))
