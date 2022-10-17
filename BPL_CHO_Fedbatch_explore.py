@@ -176,6 +176,10 @@ parLocation['F5'] = 'dosagescheme.table[6,2]'
 parLocation['t6'] = 'dosagescheme.table[7,1]'
 parLocation['F6'] = 'dosagescheme.table[7,2]'
 
+# Extra only for describe()
+parLocation['mu'] = 'bioreactor.culture.mu'
+parLocation['mu_d'] = 'bioreactor.culture.mu_d'
+
 # Create list of diagrams to be plotted by simu()
 global diagrams
 diagrams = []
@@ -420,7 +424,7 @@ def newplot(title='Fedbatch cultivation',  plotType='TimeSeries'):
       diagrams.append("ax42.plot(t,sim_res['bioreactor.c[7]'], color='g', linestyle=linetype)")       
       diagrams.append("ax51.plot(t,sim_res['bioreactor.V'], color='b', linestyle=linetype)") 
 
-      diagrams.append("ax13.set_title('- microscopic world')") 
+      diagrams.append("ax13.set_title('- cell specific rates')") 
       diagrams.append("ax13.plot(t,-(sim_res['bioreactor.culture.q[3]']+sim_res['bioreactor.culture.qG_over']), color='r', linestyle=linetype)") 
       diagrams.append("ax13.plot(t,-sim_res['bioreactor.culture.q[3]'], color='b', linestyle=linetype)") 
       diagrams.append("ax23.plot(t,-(sim_res['bioreactor.culture.q[4]']+sim_res['bioreactor.culture.qGn_over']), color='r', linestyle=linetype)") 
