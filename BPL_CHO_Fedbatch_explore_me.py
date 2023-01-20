@@ -77,7 +77,7 @@ elif platform.system() == 'Linux':
 #   flag_type = input('Linux - run FMU-CS (CS) or ME (ME)?')  
 #   print()   
    flag_vendor = 'OM'
-   flag_type = 'ME'
+   flag_type = 'CS'
    if flag_vendor in ['','JM','jm']:    
       print('Linux - run FMU pre-compiled JModelica 2.4')
       fmu_model ='BPL_CHO_Fedbatch_linux_jm_cs.fmu'        
@@ -94,7 +94,6 @@ elif platform.system() == 'Linux':
          model = load_fmu(fmu_model, log_level=0)
          opts = model.simulate_options()
          opts['silent_mode'] = True 
-
       if flag_type in ['ME','me']:         
          fmu_model ='BPL_CHO_Fedbatch_linux_om_me.fmu'    
          model = load_fmu(fmu_model, log_level=0)
