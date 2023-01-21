@@ -149,13 +149,13 @@ parDict['t1'] =  50.0             # h
 parDict['F1'] =   0.0012          # L/h
 parDict['t2'] =  64.0             # h
 parDict['F2'] =   0.0020          # L/h
-parDict['t3'] =  78.0             # h
+parDict['t3'] =  1003.0             # h
 parDict['F3'] =   0.0040          # L/h
-parDict['t4'] =  92.0             # h
+parDict['t4'] =  1004.0             # h
 parDict['F4'] =   0.0080          # L/h
-parDict['t5'] = 106.0             # h
+parDict['t5'] = 1005.0             # h
 parDict['F5'] =   0.012           # L/h
-parDict['t6'] = 150.0             # h
+parDict['t6'] = 1006.0             # h
 parDict['F6'] =   0.012           # L/h
 
 global parLocation; parLocation = {}
