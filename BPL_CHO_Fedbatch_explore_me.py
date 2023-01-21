@@ -40,6 +40,7 @@
 # 2022-10-06 - Updated for FMU-explore 0.9.5 with disp() that do not include extra parameters with parLocation
 # 2023-01-16 - Adjusted for OM testing
 # 2023-01-20 - Adjusted for extended Linux testing and FMU-explore 0.9.6e with handling ov MSL and BPL info
+# 2023-01-21 - Added alpha and beta in the parDict
 #-------------------------------------------------------------------------------------------------------------------
 
 # Setup framework
@@ -141,6 +142,9 @@ parDict['mu_d_max'] = 0.1302
 
 parDict['k_lysis'] = 0.0
 
+parDict['alpha'] = -1.0
+parDict['beta'] = 0.01
+
 parDict['G_in']  =  15.0          # mM
 parDict['Gn_in']  =  4.0          # mM
 parDict['t0'] =   0.0             # h
@@ -172,6 +176,9 @@ parLocation['qG_max2'] = 'bioreactor.culture.qG_max2'
 parLocation['qGn_max1'] = 'bioreactor.culture.qGn_max1'
 parLocation['qGn_max2'] = 'bioreactor.culture.qGn_max2'
 parLocation['mu_d_max'] = 'bioreactor.culture.mu_d_max'
+
+parLocation['alpha'] = 'bioreactor.culture.alpha'
+parLocation['beta'] = 'bioreactor.culture.beta'
 
 parLocation['k_lysis'] = 'bioreactor.broth_decay.k_lysis'
 
