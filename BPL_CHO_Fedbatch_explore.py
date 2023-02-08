@@ -42,6 +42,7 @@
 # 2022-09-13 - Updated for FMU-explore 0.9.3
 # 2022-09-22 - Corrected the label of product to MAb
 # 2022-10-05 - Updated for FMU-explore 0.9.5 with disp() that do not include extra parameters with parLocation
+# 2023-02-08 - Updated to FMU-explore 0.9.6e
 #-------------------------------------------------------------------------------------------------------------------
 
 # Setup framework
@@ -75,13 +76,38 @@ if platform.system() == 'Windows':
    opts = model.simulate_options()
    opts['silent_mode'] = True
 elif platform.system() == 'Linux':
-   print('Linux - run FMU pre-comiled JModelica 2.4')
-   fmu_model = 'BPL_CHO_Fedbatch_linux_jm_cs.fmu'    
-   model = load_fmu(fmu_model, log_level=7)
-   opts = model.simulate_options()
-   opts['silent_mode'] = False
-else:    
-   print('There is no FMU for this platform')
+#   flag_vendor = input('Linux - run FMU from JModelica (JM) or OpenModelica (OM)?')  
+#   flag_type = input('Linux - run FMU-CS (CS) or ME (ME)?')  
+#   print()   
+   flag_vendor = 'OM'
+   flag_type = 'CS'
+   if flag_vendor in ['','JM','jm']:    
+      print('Linux - run FMU pre-compiled JModelica 2.4')
+      fmu_model ='BPL_CHO_Fedbatch_linux_jm_cs.fmu'        
+      model = load_fmu(fmu_model, log_level=0)
+      opts = model.simulate_options()
+      opts['silent_mode'] = True
+      MSL_usage = model.get('MSL.usage')[0]
+      MSL_version = model.get('MSL.version')[0]
+      BPL_version = model.get('BPL.version')[0]
+   if flag_vendor in ['OM','om']:
+      print('Linux - run FMU pre-comiled OpenModelica 1.21.0') 
+      if flag_type in ['CS','cs']:         
+         fmu_model ='BPL_CHO_Fedbatch_linux_om_cs.fmu'  
+         model = load_fmu(fmu_model, log_level=0)
+         opts = model.simulate_options()
+         opts['silent_mode'] = True 
+      if flag_type in ['ME','me']:         
+         fmu_model ='BPL_CHO_Fedbatch_linux_om_me.fmu'    
+         model = load_fmu(fmu_model, log_level=0)
+         opts = model.simulate_options() 
+         opts["CVode_options"]["verbosity"] = 50 
+      MSL_usage = '3.2.3 - used components: RealInput, RealOutput, CombiTimeTable, Types' 
+      MSL_version = '3.2.3'
+      BPL_version = 'Bioprocess Library version 2.1.1-beta' 
+      
+   else:    
+      print('There is no FMU for this platform')
 
 # Simulation time
 global simulationTime; simulationTime = 120.0
@@ -494,7 +520,7 @@ def describe(name, decimals=3):
 
 #------------------------------------------------------------------------------------------------------------------
 #  General code 
-FMU_explore = 'FMU-explore ver 0.9.5'
+FMU_explore = 'FMU-explore version 0.9.6e'
 #------------------------------------------------------------------------------------------------------------------
 
 # Define function par() for parameter update
@@ -685,10 +711,10 @@ def describe_parts(component_list=[]):
       
    print(sorted(component_list, key=str.casefold))
    
-def describe_MSL():
+def describe_MSL(flag_vendor=flag_vendor):
    """List MSL version and components used"""
-   print('MSL:', model.get('MSL.version')[0],'- used components:', model.get('MSL.usage')[0])
-
+   print('MSL:', MSL_usage)
+ 
 # Describe parameters and variables in the Modelica code
 def describe_general(name, decimals):
   
@@ -762,8 +788,8 @@ def system_info():
    print(' -Type:', FMU_type)
    print(' -Name:', model.get_name())
    print(' -Generated:', model.get_generation_date_and_time())
-   print(' -MSL:', model.get('MSL.version')[0])
-   print(' -Description:', model.get('BPL.version')[0])  
+   print(' -MSL:', MSL_version)    
+   print(' -Description:', BPL_version)   
    print(' -Interaction:', FMU_explore)
    
 #------------------------------------------------------------------------------------------------------------------
