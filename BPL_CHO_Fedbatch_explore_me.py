@@ -41,6 +41,7 @@
 # 2023-01-16 - Adjusted for OM testing
 # 2023-01-20 - Adjusted for extended Linux testing and FMU-explore 0.9.6e with handling ov MSL and BPL info
 # 2023-01-21 - Added alpha and beta in the parDict
+# 2023-02-13 - Consolidate FMU-explore to 0.9.6 and means parCheck and par() udpate and simu() with opts as arg
 #-------------------------------------------------------------------------------------------------------------------
 
 # Setup framework
@@ -61,51 +62,56 @@ if platform.system() == 'Linux': locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
 #  Setup application FMU
 #------------------------------------------------------------------------------------------------------------------
 
-# Define model file name and class name 
-#model_name = 'BPL_CHO.Fedbatch' 
-#application_file = 'BPL_CHO.mo'
-#library_file = 'BPL.mo'
-
-global fmu_model, model, opts
+# Provde the right FMU and load for different platforms in user dialogue:
+global fmu_model, model
 if platform.system() == 'Windows':
    print('Windows - run FMU pre-compiled JModelica 2.14')
-   fmu_model = 'BPL_CHO_Fedbatch_windows_jm_cs.fmu'     
-   model = load_fmu(fmu_model, log_level=0)
-   opts = model.simulate_options()
-   opts['silent_mode'] = True
+   flag_vendor = 'JM'
+   flag_type = 'CS'
+   fmu_model ='BPL_CHO_Fedbatch_windows_jm_cs.fmu'        
+   model = load_fmu(fmu_model, log_level=0)  
 elif platform.system() == 'Linux':
 #   flag_vendor = input('Linux - run FMU from JModelica (JM) or OpenModelica (OM)?')  
 #   flag_type = input('Linux - run FMU-CS (CS) or ME (ME)?')  
 #   print()   
    flag_vendor = 'OM'
-   flag_type = 'CS'
-   if flag_vendor in ['','JM','jm']:    
-      print('Linux - run FMU pre-compiled JModelica 2.4')
-      fmu_model ='BPL_CHO_Fedbatch_linux_jm_cs.fmu'        
-      model = load_fmu(fmu_model, log_level=0)
-      opts = model.simulate_options()
-      opts['silent_mode'] = True
-      MSL_usage = model.get('MSL.usage')[0]
-      MSL_version = model.get('MSL.version')[0]
-      BPL_version = model.get('BPL.version')[0]
+   flag_type = 'ME'
    if flag_vendor in ['OM','om']:
       print('Linux - run FMU pre-comiled OpenModelica 1.21.0') 
       if flag_type in ['CS','cs']:         
-         fmu_model ='BPL_CHO_Fedbatch_linux_om_cs.fmu'  
-         model = load_fmu(fmu_model, log_level=0)
-         opts = model.simulate_options()
-         opts['silent_mode'] = True 
+         fmu_model ='BPL_CHO_Fedbatch_linux_om_cs.fmu'    
+         model = load_fmu(fmu_model, log_level=0) 
       if flag_type in ['ME','me']:         
          fmu_model ='BPL_CHO_Fedbatch_linux_om_me.fmu'    
          model = load_fmu(fmu_model, log_level=0)
-         opts = model.simulate_options() 
-         opts["CVode_options"]["verbosity"] = 50 
-      MSL_usage = '3.2.3 - used components: RealInput, RealOutput, CombiTimeTable, Types' 
-      MSL_version = '3.2.3'
-      BPL_version = 'Bioprocess Library version 2.1.1-beta' 
-      
    else:    
       print('There is no FMU for this platform')
+
+# Provide various opts-profiles
+if flag_type in ['CS', 'cs']:
+   opts_std = model.simulate_options()
+   opts_std['silent_mode'] = True
+   opts_std['ncp'] = 500 
+   opts_std['result_handling'] = 'binary'     
+elif flag_type in ['ME', 'me']:
+   opts_std = model.simulate_options()
+   opts_std["CVode_options"]["verbosity"] = 50 
+   opts_std['ncp'] = 500 
+   opts_std['result_handling'] = 'binary'  
+else:    
+   print('There is no FMU for this platform')
+  
+# Provide various MSL and BPL versions
+if flag_vendor in ['JM', 'jm']:
+   MSL_usage = model.get('MSL.usage')[0]
+   MSL_version = model.get('MSL.version')[0]
+   BPL_version = model.get('BPL.version')[0]
+elif flag_vendor in ['OM', 'om']:
+   MSL_usage = '3.2.3 - used components: RealInput, RealOutput, CombiTimeTable, Types' 
+   MSL_version = '3.2.3'
+   BPL_version = 'Bioprocess Library version 2.1.1-beta' 
+else:    
+   print('There is no FMU for this platform')
 
 # Simulation time
 global simulationTime; simulationTime = 120.0
@@ -203,6 +209,21 @@ parLocation['F6'] = 'dosagescheme.table[7,2]'
 # Extra only for describe()
 parLocation['mu'] = 'bioreactor.culture.mu'
 parLocation['mu_d'] = 'bioreactor.culture.mu_d'
+
+# Parameter value check - especially for hysteresis to avoid runtime error
+global parCheck; parCheck = []
+parCheck.append("parDict['V_0'] > 0")
+parCheck.append("parDict['VXv_0'] >= 0")
+parCheck.append("parDict['VG_0'] >= 0")
+parCheck.append("parDict['VGn_0'] >= 0")
+parCheck.append("parDict['VL_0'] >= 0")
+parCheck.append("parDict['VN_0'] >= 0")
+parCheck.append("parDict['t0'] < parDict['t1']")
+parCheck.append("parDict['t1'] < parDict['t2']")
+parCheck.append("parDict['t2'] < parDict['t3']")
+parCheck.append("parDict['t3'] < parDict['t4']")
+parCheck.append("parDict['t4'] < parDict['t5']")
+parCheck.append("parDict['t5'] < parDict['t6']")
 
 # Create list of diagrams to be plotted by simu()
 global diagrams
@@ -322,11 +343,11 @@ def describe(name, decimals=3):
 
 #------------------------------------------------------------------------------------------------------------------
 #  General code 
-FMU_explore = 'FMU-explore version 0.9.6e'
+FMU_explore = 'FMU-explore version 0.9.6'
 #------------------------------------------------------------------------------------------------------------------
 
 # Define function par() for parameter update
-def par(parDict=parDict, parLocation=parLocation, *x, **x_kwarg):
+def par(parDict=parDict, parCheck=parCheck, parLocation=parLocation, *x, **x_kwarg):
    """ Set parameter values if available in the predefined dictionaryt parDict. """
    x_kwarg.update(*x)
    x_temp = {}
@@ -336,6 +357,11 @@ def par(parDict=parDict, parLocation=parLocation, *x, **x_kwarg):
       else:
          print('Error:', key, '- seems not an accessible parameter - check the spelling')
    parDict.update(x_temp)
+   
+   parErrors = [requirement for requirement in parCheck if not(eval(requirement))]
+   if not parErrors == []:
+      print('Error - the following requirements do not hold:')
+      for index, item in enumerate(parErrors): print(item)
 
 # Define function init() for initial values update
 def init(parDict=parDict, *x, **x_kwarg):
@@ -407,16 +433,17 @@ def show(diagrams=diagrams):
    for command in diagrams: eval(command)
 
 # Simulation
-def simu(simulationTimeLocal=simulationTime, mode='Initial', diagrams=diagrams,timeDiscreteStates=timeDiscreteStates):
+def simu(simulationTimeLocal=simulationTime, mode='Initial', options=opts_std, \
+         diagrams=diagrams,timeDiscreteStates=timeDiscreteStates):         
    """Model loaded and given intial values and parameter before,
       and plot window also setup before."""
     
    # Global variables
    global model, parDict, stateDict, prevFinalTime, simulationTime, sim_res, t
-
+   
    # Transfer of argument to global variable
    simulationTime = simulationTimeLocal 
-   
+      
    # Check parDict
    value_missing = 0
    for key in parDict.keys():
@@ -436,7 +463,7 @@ def simu(simulationTimeLocal=simulationTime, mode='Initial', diagrams=diagrams,t
       for key in parDict.keys():
          model.set(parLocation[key],parDict[key])   
       # Simulate
-      sim_res = model.simulate(final_time=simulationTime, options=opts)      
+      sim_res = model.simulate(final_time=simulationTime, options=options)      
    elif mode in ['Continued', 'continued', 'cont']:
       # Set parameters and intial state values:
       for key in parDict.keys():
@@ -460,7 +487,7 @@ def simu(simulationTimeLocal=simulationTime, mode='Initial', diagrams=diagrams,t
       # Simulate
       sim_res = model.simulate(start_time=prevFinalTime,
                               final_time=prevFinalTime + simulationTime,
-                              options=opts)     
+                              options=options)     
    else:
       print("Simulation mode not correct")
     
@@ -482,7 +509,7 @@ def simu(simulationTimeLocal=simulationTime, mode='Initial', diagrams=diagrams,t
 
    # Store time from where simulation will start next time
    prevFinalTime = model.time
-   
+      
 # Describe model parts of the combined system
 def describe_parts(component_list=[]):
    """List all parts of the model""" 
