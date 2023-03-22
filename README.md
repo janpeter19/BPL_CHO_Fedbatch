@@ -13,7 +13,7 @@ You see in the diagram typical aspects of a CHO Fedbatch process for a certain t
 You start up the notebook in Colab by pressing here
 [start BPL notebook](https://colab.research.google.com/github/janpeter19/BPL_CHO_Fedbatch/blob/main/BPL_CHO_Fedbatch_colab.ipynb)
 or alternatively (experimentally)
-[start BPL notebook with FMPy](https://github.com/janpeter19/BPL_YEAST_AIR_Fedbatch/blob/main/BPL_YEAST_AIR_Fedbatch_fmpy_colab.ipynb).
+[start BPL notebook with FMPy](https://github.com/janpeter19/BPL_CHO_Fedbatch/blob/main/BPL_CHO_Fedbatch_fmpy_colab.ipynb).
 Then you in the menu choose Runtime/Run all. If you have chosen the altarnative with FMPy click first on the symbol Open in Colab.
 The subsequent execution of the simulations of CHO cultivation take just a second or so. 
 
