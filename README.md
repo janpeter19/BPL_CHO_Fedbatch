@@ -11,9 +11,11 @@ You see in the diagram typical aspects of a CHO Fedbatch process for a certain t
 * In the diagrams to the right for specific glucose and glutamine uptake, the red line shows the bottleneck of metabolism. 
 
 You start up the notebook in Colab by pressing here
-[start BPL notebook](https://colab.research.google.com/github/janpeter19/BPL_CHO_Fedbatch/blob/main/BPL_CHO_Fedbatch_colab_me.ipynb)
-
-Then you in the menu choose Runtime/Run all. The installation takes just a few minutes. The subsequent execution of the simulations of microbial growth take just a second or so. 
+[start BPL notebook](https://colab.research.google.com/github/janpeter19/BPL_CHO_Fedbatch/blob/main/BPL_CHO_Fedbatch_colab.ipynb)
+or alternatively (experimentally)
+[start BPL notebook with FMPy](https://github.com/janpeter19/BPL_YEAST_AIR_Fedbatch/blob/main/BPL_YEAST_AIR_Fedbatch_fmpy_colab.ipynb).
+Then you in the menu choose Runtime/Run all. If you have chosen the altarnative with FMPy click first on the symbol Open in Colab.
+The subsequent execution of the simulations of CHO cultivation take just a second or so. 
 
 You can continue in the notebook and make new simulations and follow the examples given. Here are many things to explore!
 
