@@ -10,6 +10,7 @@
 # 2023-03-22 - Correcting the script by including logging of states in a pedestrian way
 # 2023-03-23 - Update FMU-explore to 0.9.7c
 # 2023-03-28 - Update FMU-explore 0.9.7
+# 2023-04-21 - Compiled for Ubuntu 20.04 and changed BPL_version
 #-------------------------------------------------------------------------------------------------------------------
 
 # Setup framework
@@ -79,7 +80,7 @@ if flag_vendor in ['JM', 'jm']:
 elif flag_vendor in ['OM', 'om']:
    MSL_usage = '3.2.3 - used components: RealInput, RealOutput, CombiTimeTable, Types' 
    MSL_version = '3.2.3'
-   BPL_version = 'Bioprocess Library version 2.1.1-beta' 
+   BPL_version = 'Bioprocess Library version 2.1.1' 
 else:    
    print('There is no FMU for this platform')
    
