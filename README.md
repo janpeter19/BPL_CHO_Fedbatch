@@ -19,9 +19,10 @@ The subsequent execution of the simulations of CHO cultivation take just a secon
 
 You can continue in the notebook and make new simulations and follow the examples given. Here are many things to explore!
 
+See also the related repositories: BPL_TEST2_Fedbatch and BPL_YEAST_AIR_Fedbatch.
+
 Note that:
 * The script occassionaly get stuck during installation. Then just close the notebook and start from scratch.
-* Runtime warnings are at the moment silenced. The main reason is that we run with an older combination of PyFMI and Python that bring depracation warnings of little interest. 
 * Remember, you need to have a google-account!
 
 Just to be clear, no installation is done at your local computer.
