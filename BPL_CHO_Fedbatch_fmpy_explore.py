@@ -11,6 +11,7 @@
 # 2023-03-23 - Update FMU-explore to 0.9.7c
 # 2023-03-28 - Update FMU-explore 0.9.7
 # 2023-04-21 - Compiled for Ubuntu 20.04 and changed BPL_version
+# 2023-05-31 - Adjusted to from importlib.meetadata import version
 #-------------------------------------------------------------------------------------------------------------------
 
 # Setup framework
@@ -25,7 +26,7 @@ from fmpy import read_model_description
 import fmpy as fmpy
 
 from itertools import cycle
-from importlib_metadata import version   # included in future Python 3.8
+from importlib.metadata import version  
 
 # Set the environment - for Linux a JSON-file in the FMU is read
 if platform.system() == 'Linux': locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')

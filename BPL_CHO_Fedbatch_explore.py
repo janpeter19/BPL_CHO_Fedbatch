@@ -47,6 +47,7 @@
 # 2023-03-22 - Minor adjustments
 # 2023-03-28 - Update FMU-explore 0.9.7
 # 2023-04-21 - Compiled for Ubuntu 20.04 and changed BPL_version
+# 2023-05-31 - Adjusted to from importlib.meetadata import version
 #------------------------------------------------------------------------------------------------------------------
 
 # Setup framework
@@ -58,7 +59,7 @@ import matplotlib.pyplot as plt
 from pyfmi import load_fmu
 from pyfmi.fmi import FMUException
 from itertools import cycle
-from importlib_metadata import version   # included in future Python 3.8
+from importlib.metadata import version 
 
 # Set the environment - for Linux a JSON-file in the FMU is read
 if platform.system() == 'Linux': locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
