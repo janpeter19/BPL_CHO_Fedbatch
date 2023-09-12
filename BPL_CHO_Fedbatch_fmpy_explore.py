@@ -93,7 +93,7 @@ global simulationTime; simulationTime = 120.0
 global prevFinalTime; prevFinalTime = 0
 
 # Provide process diagram on disk
-fmu_process_diagram ='BPL_GUI_VJO_Fedbatch_process_diagram_om.png'
+fmu_process_diagram ='BPL_GUI_CHO_Fedbatch_process_diagram_om.png'
 
 # Dictionary of time discrete states
 timeDiscreteStates = {} 
