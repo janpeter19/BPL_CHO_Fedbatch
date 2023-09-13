@@ -12,7 +12,7 @@
 # 2023-03-28 - Update FMU-explore 0.9.7
 # 2023-04-21 - Compiled for Ubuntu 20.04 and changed BPL_version
 # 2023-05-31 - Adjusted to from importlib.meetadata import version
-# 2023-09-12 - Updated to FMU-explore 0.9.8 and introduced proces diagram
+# 2023-09-12 - Updated to FMU-explore 0.9.8 and introduced process diagram
 #-------------------------------------------------------------------------------------------------------------------
 
 # Setup framework
