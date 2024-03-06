@@ -49,6 +49,7 @@
 # 2023-04-21 - Compiled for Ubuntu 20.04 and changed BPL_version
 # 2023-05-31 - Adjusted to from importlib.meetadata import version
 # 2023-09-12 - Updated to FMU-explore 0.9.8 and introduced proces diagram
+# 2024-03-06 - Update FMU-explore 0.9.9 - now with _0 replaced with _start everywhere
 #------------------------------------------------------------------------------------------------------------------
 
 # Setup framework
@@ -119,7 +120,7 @@ if flag_vendor in ['JM', 'jm']:
 elif flag_vendor in ['OM', 'om']:
    MSL_usage = '3.2.3 - used components: RealInput, RealOutput, CombiTimeTable, Types' 
    MSL_version = '3.2.3'
-   BPL_version = 'Bioprocess Library version 2.1.1' 
+   BPL_version = 'Bioprocess Library version 2.1.2 prel' 
 else:    
    print('There is no FMU for this platform')
    
@@ -127,14 +128,14 @@ else:
 global simulationTime; simulationTime = 120.0
 global prevFinalTime; prevFinalTime = 0
 
-# Provide process diagram on disk
-fmu_process_diagram ='BPL_GUI_CHO_Fedbatch_process_diagram_om.png'
-
 # Dictionary of time discrete states
 timeDiscreteStates = {} 
 
 # Define a minimal compoent list of the model as a starting point for describe('parts')
 component_list_minimum = ['bioreactor', 'bioreactor.culture', 'bioreactor.broth_decay']
+
+# Provide process diagram on disk
+fmu_process_diagram ='BPL_GUI_CHO_Fedbatch_process_diagram_om.png'
 
 #------------------------------------------------------------------------------------------------------------------
 #  Specific application constructs: stateDict, parDict, diagrams, newplot(), describe()
@@ -147,13 +148,13 @@ stateDict.update(timeDiscreteStates)
 
 # Create parDict
 global parDict; parDict = {}
-parDict['V_0']    = 0.35          # L
-parDict['VXv_0'] = 0.35*0.2       
-parDict['VXd_0'] = 0.0            
-parDict['VG_0'] = 0.35*18.0       
-parDict['VGn_0'] = 0.35*2.4       
-parDict['VL_0'] = 0.0             
-parDict['VN_0'] = 0.0             
+parDict['V_start']    = 0.35          # L
+parDict['VXv_start'] = 0.35*0.2       
+parDict['VXd_start'] = 0.0            
+parDict['VG_start'] = 0.35*18.0       
+parDict['VGn_start'] = 0.35*2.4       
+parDict['VL_start'] = 0.0             
+parDict['VN_start'] = 0.0             
 
 parDict['qG_max1'] = 0.2971
 parDict['qG_max2'] = 0.0384
@@ -184,13 +185,13 @@ parDict['t6'] = 996.0             # h
 parDict['F6'] =   0.012           # L/h
 
 global parLocation; parLocation = {}
-parLocation['V_0'] = 'bioreactor.V_0'
-parLocation['VXv_0'] = 'bioreactor.m_0[1]'
-parLocation['VXd_0'] = 'bioreactor.m_0[2]'
-parLocation['VG_0'] = 'bioreactor.m_0[3]'
-parLocation['VGn_0'] = 'bioreactor.m_0[4]'
-parLocation['VL_0'] = 'bioreactor.m_0[5]'
-parLocation['VN_0'] = 'bioreactor.m_0[6]'
+parLocation['V_start'] = 'bioreactor.V_start'
+parLocation['VXv_start'] = 'bioreactor.m_start[1]'
+parLocation['VXd_start'] = 'bioreactor.m_start[2]'
+parLocation['VG_start'] = 'bioreactor.m_start[3]'
+parLocation['VGn_start'] = 'bioreactor.m_start[4]'
+parLocation['VL_start'] = 'bioreactor.m_start[5]'
+parLocation['VN_start'] = 'bioreactor.m_start[6]'
 
 parLocation['qG_max1'] = 'bioreactor.culture.qG_max1'
 parLocation['qG_max2'] = 'bioreactor.culture.qG_max2'
@@ -227,12 +228,12 @@ parLocation['mu_d'] = 'bioreactor.culture.mu_d'
 
 # Parameter value check - especially for hysteresis to avoid runtime error
 global parCheck; parCheck = []
-parCheck.append("parDict['V_0'] > 0")
-parCheck.append("parDict['VXv_0'] >= 0")
-parCheck.append("parDict['VG_0'] >= 0")
-parCheck.append("parDict['VGn_0'] >= 0")
-parCheck.append("parDict['VL_0'] >= 0")
-parCheck.append("parDict['VN_0'] >= 0")
+parCheck.append("parDict['V_start'] > 0")
+parCheck.append("parDict['VXv_start'] >= 0")
+parCheck.append("parDict['VG_start'] >= 0")
+parCheck.append("parDict['VGn_start'] >= 0")
+parCheck.append("parDict['VL_start'] >= 0")
+parCheck.append("parDict['VN_start'] >= 0")
 parCheck.append("parDict['t0'] < parDict['t1']")
 parCheck.append("parDict['t1'] < parDict['t2']")
 parCheck.append("parDict['t2'] < parDict['t3']")
@@ -554,7 +555,7 @@ def describe(name, decimals=3):
 
 #------------------------------------------------------------------------------------------------------------------
 #  General code 
-FMU_explore = 'FMU-explore version 0.9.8'
+FMU_explore = 'FMU-explore version 0.9.9'
 #------------------------------------------------------------------------------------------------------------------
 
 # Define function par() for parameter update
@@ -576,12 +577,12 @@ def par(parDict=parDict, parCheck=parCheck, parLocation=parLocation, *x, **x_kwa
 
 # Define function init() for initial values update
 def init(parDict=parDict, *x, **x_kwarg):
-   """ Set initial values and the name should contain string '_0' to be accepted.
+   """ Set initial values and the name should contain string '_start' to be accepted.
        The function can handle general parameter string location names if entered as a dictionary. """
    x_kwarg.update(*x)
    x_init={}
    for key in x_kwarg.keys():
-      if '_0' in key: 
+      if '_start' in key: 
          x_init.update({key: x_kwarg[key]})
       else:
          print('Error:', key, '- seems not an initial value, use par() instead - check the spelling')
@@ -692,17 +693,17 @@ def simu(simulationTimeLocal=simulationTime, mode='Initial', options=opts_std, \
          for key in stateDict.keys():
             if not key[-1] == ']':
                if key[-3:] == 'I.y': 
-                  model.set(key[:-10]+'I_0', stateDict[key]) 
+                  model.set(key[:-10]+'I_start', stateDict[key]) 
                elif key[-3:] == 'D.x': 
-                  model.set(key[:-10]+'D_0', stateDict[key]) 
+                  model.set(key[:-10]+'D_start', stateDict[key]) 
                else:
-                  model.set(key+'_0', stateDict[key])
+                  model.set(key+'_start', stateDict[key])
             elif key[-3] == '[':
-               model.set(key[:-3]+'_0'+key[-3:], stateDict[key]) 
+               model.set(key[:-3]+'_start'+key[-3:], stateDict[key]) 
             elif key[-4] == '[':
-               model.set(key[:-4]+'_0'+key[-4:], stateDict[key]) 
+               model.set(key[:-4]+'_start'+key[-4:], stateDict[key]) 
             elif key[-5] == '[':
-               model.set(key[:-5]+'_0'+key[-5:], stateDict[key]) 
+               model.set(key[:-5]+'_start'+key[-5:], stateDict[key]) 
             else:
                print('The state vecotr has more than 1000 states')
                break
@@ -804,7 +805,7 @@ def describe_general(name, decimals):
             print(description, ':', value)     
       else:
          print(description, ':', np.round(value, decimals), '[',unit,']')
-
+         
 # Plot process diagram
 def process_diagram(fmu_model=fmu_model, fmu_process_diagram=fmu_process_diagram):   
    try:
