@@ -50,6 +50,7 @@
 # 2023-05-31 - Adjusted to from importlib.meetadata import version
 # 2023-09-12 - Updated to FMU-explore 0.9.8 and introduced proces diagram
 # 2024-03-06 - Update FMU-explore 0.9.9 - now with _0 replaced with _start everywhere
+# 2024-05-13 - Polish the script
 #------------------------------------------------------------------------------------------------------------------
 
 # Setup framework
@@ -63,6 +64,7 @@ import zipfile
 
 from pyfmi import load_fmu
 from pyfmi.fmi import FMUException
+
 from itertools import cycle
 from importlib.metadata import version 
 
@@ -120,7 +122,7 @@ if flag_vendor in ['JM', 'jm']:
 elif flag_vendor in ['OM', 'om']:
    MSL_usage = '3.2.3 - used components: RealInput, RealOutput, CombiTimeTable, Types' 
    MSL_version = '3.2.3'
-   BPL_version = 'Bioprocess Library version 2.1.2 prel' 
+   BPL_version = 'Bioprocess Library version 2.2.0' 
 else:    
    print('There is no FMU for this platform')
    
@@ -555,7 +557,7 @@ def describe(name, decimals=3):
 
 #------------------------------------------------------------------------------------------------------------------
 #  General code 
-FMU_explore = 'FMU-explore version 0.9.9'
+FMU_explore = 'FMU-explore version 1.0.0'
 #------------------------------------------------------------------------------------------------------------------
 
 # Define function par() for parameter update
