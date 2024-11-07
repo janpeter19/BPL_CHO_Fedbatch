@@ -17,6 +17,7 @@
 # 2024-05-20 - Updated the OpenModelica version to 1.23.0-dev
 # 2024-06-01 - Corrected model_get() to handle string values as well - improvement very small and keep ver 1.0.0
 # 2024-08-13 - Corrected model_get() to handle calculatedParameters - call it ver 1.0.1
+# 2024-11-07 - Update BPL 2.3.0
 #-------------------------------------------------------------------------------------------------------------------
 
 # Setup framework
@@ -85,7 +86,7 @@ if flag_vendor in ['JM', 'jm']:
 elif flag_vendor in ['OM', 'om']:
    MSL_usage = '3.2.3 - used components: RealInput, RealOutput, CombiTimeTable, Types' 
    MSL_version = '3.2.3'
-   BPL_version = 'Bioprocess Library version 2.2.2 - GUI' 
+   BPL_version = 'Bioprocess Library version 2.3.0' 
 else:    
    print('There is no FMU for this platform')
    
@@ -100,7 +101,7 @@ timeDiscreteStates = {}
 component_list_minimum = ['bioreactor', 'bioreactor.culture', 'bioreactor.broth_decay']
 
 # Provide process diagram on disk
-fmu_process_diagram ='BPL_GUI_CHO_Fedbatch_process_diagram_om.png'
+fmu_process_diagram ='BPL_CHO_Fedbatch_process_diagram_om.png'
 
 #------------------------------------------------------------------------------------------------------------------
 #  Specific application constructs: stateDict, parDict, diagrams, newplot(), describe()
