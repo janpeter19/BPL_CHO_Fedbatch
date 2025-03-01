@@ -18,6 +18,7 @@
 # 2024-06-01 - Corrected model_get() to handle string values as well - improvement very small and keep ver 1.0.0
 # 2024-08-13 - Corrected model_get() to handle calculatedParameters - call it ver 1.0.1
 # 2024-11-07 - Update BPL 2.3.0
+# 2025-02-28 - Try with CHO - extended with Xl i.e. lysed cells that bring toxicity
 #-------------------------------------------------------------------------------------------------------------------
 
 # Setup framework
@@ -139,7 +140,8 @@ for value in stateDictInitial.values(): stateDictInitialLoc[value] = value
 global parDict; parDict = {}
 parDict['V_start']    = 0.35          # L
 parDict['VXv_start'] = 0.35*0.2       
-parDict['VXd_start'] = 0.0            
+parDict['VXd_start'] = 0.0  
+parDict['VXl_start'] = 0.0             
 parDict['VG_start'] = 0.35*18.0       
 parDict['VGn_start'] = 0.35*2.4       
 parDict['VL_start'] = 0.0             
@@ -150,8 +152,12 @@ parDict['qG_max2'] = 0.0384
 parDict['qGn_max1'] = 0.1238
 parDict['qGn_max2'] = 0.0218
 parDict['mu_d_max'] = 0.1302
+parDict['k_toxic'] = 0.0
+parDict['alpha'] = 0
+parDict['beta'] = 10.0/24
 
-parDict['k_lysis'] = 0.0
+parDict['k_lysis_v'] = 0.0
+parDict['k_lysis_d'] = 0.0
 
 parDict['alpha'] = -1.0
 parDict['beta'] = 0.01
@@ -177,24 +183,29 @@ global parLocation; parLocation = {}
 parLocation['V_start'] = 'bioreactor.V_start'
 parLocation['VXv_start'] = 'bioreactor.m_start[1]'
 parLocation['VXd_start'] = 'bioreactor.m_start[2]'
-parLocation['VG_start'] = 'bioreactor.m_start[3]'
-parLocation['VGn_start'] = 'bioreactor.m_start[4]'
-parLocation['VL_start'] = 'bioreactor.m_start[5]'
-parLocation['VN_start'] = 'bioreactor.m_start[6]'
+parLocation['VXl_start'] = 'bioreactor.m_start[3]'
+parLocation['VG_start'] = 'bioreactor.m_start[4]'
+parLocation['VGn_start'] = 'bioreactor.m_start[5]'
+parLocation['VL_start'] = 'bioreactor.m_start[6]'
+parLocation['VN_start'] = 'bioreactor.m_start[7]'
 
 parLocation['qG_max1'] = 'bioreactor.culture.qG_max1'
 parLocation['qG_max2'] = 'bioreactor.culture.qG_max2'
 parLocation['qGn_max1'] = 'bioreactor.culture.qGn_max1'
 parLocation['qGn_max2'] = 'bioreactor.culture.qGn_max2'
 parLocation['mu_d_max'] = 'bioreactor.culture.mu_d_max'
+parLocation['k_toxic'] = 'bioreactor.culture.k_toxic'
+parLocation['alpha'] = 'bioreactor.culture.alpha'
+parLocation['beta'] = 'bioreactor.culture.beta'
+
+parLocation['k_lysis_v'] = 'bioreactor.broth_decay.k_lysis_v'
+parLocation['k_lysis_d'] = 'bioreactor.broth_decay.k_lysis_d'
 
 parLocation['alpha'] = 'bioreactor.culture.alpha'
 parLocation['beta'] = 'bioreactor.culture.beta'
 
-parLocation['k_lysis'] = 'bioreactor.broth_decay.k_lysis'
-
-parLocation['G_in'] = 'feedtank.c_in[3]'
-parLocation['Gn_in'] = 'feedtank.c_in[4]'
+parLocation['G_in'] = 'feedtank.c_in[4]'
+parLocation['Gn_in'] = 'feedtank.c_in[5]'
 
 parLocation['t0'] = 'dosagescheme.table[1,1]'
 parLocation['F0'] = 'dosagescheme.table[1,2]'
@@ -215,6 +226,7 @@ parLocation['F6'] = 'dosagescheme.table[7,2]'
 global key_variables; key_variables = []
 parLocation['mu'] = 'bioreactor.culture.mu'; key_variables.append(parLocation['mu'])
 parLocation['mu_d'] = 'bioreactor.culture.mu_d'; key_variables.append(parLocation['mu_d'])
+parLocation['bioreactor.c[3]'] = 'bioreactor.c[3]'; key_variables.append(parLocation['bioreactor.c[3]'])
 
 # Parameter value check - especially for hysteresis to avoid runtime error
 global parCheck; parCheck = []
@@ -243,8 +255,7 @@ def newplot(title='Fedbatch cultivation',  plotType='TimeSeries'):
    setLines()
 
    # Globals
-   global ax11, ax12, ax21, ax22, ax31, ax32, ax41, ax42, ax51, ax52  
-   global ax13, ax23, ax33, ax43
+   global ax11, ax12, ax13, ax21, ax22, ax23, ax31, ax32, ax33, ax41, ax42, ax43, ax51    
     
    # Plot diagram 
    if plotType == 'TimeSeries':
@@ -284,14 +295,110 @@ def newplot(title='Fedbatch cultivation',  plotType='TimeSeries'):
 
       # List of commands to be executed by simu() after a simulation  
       diagrams.clear()
-      diagrams.append("ax11.plot(sim_res['time'],sim_res['bioreactor.c[3]'], color='b', linestyle=linetype)")       
-      diagrams.append("ax12.plot(sim_res['time'],sim_res['bioreactor.c[5]'], color='r', linestyle=linetype)")       
-      diagrams.append("ax21.plot(sim_res['time'],sim_res['bioreactor.c[4]'], color='b', linestyle=linetype)")       
-      diagrams.append("ax22.plot(sim_res['time'],sim_res['bioreactor.c[6]'], color='r', linestyle=linetype)")       
+      diagrams.append("ax11.plot(sim_res['time'],sim_res['bioreactor.c[4]'], color='b', linestyle=linetype)")       
+      diagrams.append("ax12.plot(sim_res['time'],sim_res['bioreactor.c[6]'], color='r', linestyle=linetype)")       
+      diagrams.append("ax21.plot(sim_res['time'],sim_res['bioreactor.c[5]'], color='b', linestyle=linetype)")       
+      diagrams.append("ax22.plot(sim_res['time'],sim_res['bioreactor.c[7]'], color='r', linestyle=linetype)")       
       diagrams.append("ax31.plot(sim_res['time'],sim_res['bioreactor.c[1]'], color='b', linestyle=linetype)")       
       diagrams.append("ax32.plot(sim_res['time'],sim_res['bioreactor.c[2]'], color='r', linestyle=linetype)")       
       diagrams.append("ax41.plot(sim_res['time'],sim_res['bioreactor.inlet[1].F'], color='b', linestyle=linetype)")       
       diagrams.append("ax42.plot(sim_res['time'],sim_res['bioreactor.V'], color='b', linestyle=linetype)") 
+
+   if plotType == 'TimeSeries1':
+
+      plt.figure()
+      ax11 = plt.subplot(4,2,1); ax12 = plt.subplot(4,2,2)
+      ax21 = plt.subplot(4,2,3); ax22 = plt.subplot(4,2,4)
+      ax31 = plt.subplot(4,2,5); ax32 = plt.subplot(4,2,6)
+      ax41 = plt.subplot(4,2,7); ax42 = plt.subplot(4,2,8)    
+
+      ax11.set_title(title)
+      ax11.grid()
+      ax11.set_ylabel('Glucose conc [mM]')
+
+      ax12.grid()
+      ax12.set_ylabel('Lactate conc [mM]')
+
+      ax21.grid()
+      ax21.set_ylabel('Glutamine conc [mM]')
+
+      ax22.grid()
+      ax22.set_ylabel('Ammonia conc [mM]')
+
+      ax31.grid()
+      ax31.set_ylabel('Viable cells conc [1E6/mL]')
+
+      ax32.grid()
+      ax32.set_ylabel('Dead and lysed cells [1E6/mL]')
+
+      ax41.grid()
+      ax41.set_ylabel('Feed rate [L/h]')
+      ax41.set_xlabel('Time [h]')
+
+      ax42.grid()
+      ax42.set_ylabel('Volume [L]')
+      ax42.set_xlabel('Time [h]')
+      
+      # List of commands to be executed by simu() after a simulation  
+      diagrams.clear()
+      diagrams.append("ax11.plot(sim_res['time'],sim_res['bioreactor.c[4]'], color='b', linestyle=linetype)")       
+      diagrams.append("ax12.plot(sim_res['time'],sim_res['bioreactor.c[6]'], color='r', linestyle=linetype)")       
+      diagrams.append("ax21.plot(sim_res['time'],sim_res['bioreactor.c[5]'], color='b', linestyle=linetype)")       
+      diagrams.append("ax22.plot(sim_res['time'],sim_res['bioreactor.c[7]'], color='r', linestyle=linetype)")       
+      diagrams.append("ax31.plot(sim_res['time'],sim_res['bioreactor.c[1]'], color='b', linestyle=linetype)")       
+      diagrams.append("ax32.plot(sim_res['time'],sim_res['bioreactor.c[2]'], color='r', linestyle=linetype)")  
+      diagrams.append("ax32.plot(sim_res['time'],sim_res['bioreactor.c[3]'], color='k', linestyle=linetype)")       
+      diagrams.append("ax41.plot(sim_res['time'],sim_res['bioreactor.inlet[1].F'], color='b', linestyle=linetype)")       
+      diagrams.append("ax42.plot(sim_res['time'],sim_res['bioreactor.V'], color='b', linestyle=linetype)")
+
+   # Plot diagram 
+   if plotType == 'TimeSeries2':
+   
+      plt.figure()
+      ax11 = plt.subplot(4,2,1); ax12 = plt.subplot(4,2,2)
+      ax21 = plt.subplot(4,2,3); ax22 = plt.subplot(4,2,4)
+      ax31 = plt.subplot(4,2,5); ax32 = plt.subplot(4,2,6)
+      ax41 = plt.subplot(4,2,7); ax42 = plt.subplot(4,2,8)    
+
+      ax11.set_title(title)
+      ax11.grid()
+      ax11.set_ylabel('Glucose conc [mM]')
+
+      ax12.grid()
+      ax12.set_ylabel('Lactate conc [mM]')
+
+      ax21.grid()
+      ax21.set_ylabel('Glutamine conc [mM]')
+
+      ax22.grid()
+      ax22.set_ylabel('Ammonia conc [mM]')
+
+      ax31.grid()
+      ax31.set_ylabel('Viable cells [1E6]')
+
+      ax32.grid()
+      ax32.set_ylabel('Dead and lysed cells [1E6/mL]')
+
+      ax41.grid()
+      ax41.set_ylabel('Feed rate [L/h]')
+      ax41.set_xlabel('Time [h]')
+
+      ax42.grid()
+      ax42.set_ylabel('Volume [L]')
+      ax42.set_xlabel('Time [h]')
+
+      # List of commands to be executed by simu() after a simulation  
+      diagrams.clear()
+      diagrams.append("ax11.plot(sim_res['time'],sim_res['bioreactor.c[4]'], color='b', linestyle=linetype)")       
+      diagrams.append("ax12.plot(sim_res['time'],sim_res['bioreactor.c[6]'], color='r', linestyle=linetype)")       
+      diagrams.append("ax21.plot(sim_res['time'],sim_res['bioreactor.c[5]'], color='b', linestyle=linetype)")       
+      diagrams.append("ax22.plot(sim_res['time'],sim_res['bioreactor.c[7]'], color='r', linestyle=linetype)")       
+      diagrams.append("ax31.plot(sim_res['time'],sim_res['bioreactor.m[1]'], color='b', linestyle=linetype)")       
+      diagrams.append("ax32.plot(sim_res['time'],sim_res['bioreactor.c[2]'], color='r', linestyle=linetype)")  
+      diagrams.append("ax32.plot(sim_res['time'],sim_res['bioreactor.c[3]'], color='k', linestyle=linetype)")       
+      diagrams.append("ax41.plot(sim_res['time'],sim_res['bioreactor.inlet[1].F'], color='b', linestyle=linetype)")       
+      diagrams.append("ax42.plot(sim_res['time'],sim_res['bioreactor.V'], color='b', linestyle=linetype)") 
+
 
    if plotType == 'Textbook_1':
  
@@ -465,27 +572,27 @@ def newplot(title='Fedbatch cultivation',  plotType='TimeSeries'):
       
       # List of commands to be executed by simu() after a simulation  
       diagrams.clear()
-      diagrams.append("ax11.plot(sim_res['time'],sim_res['bioreactor.c[3]'], color='b', linestyle=linetype)")       
-      diagrams.append("ax12.plot(sim_res['time'],sim_res['bioreactor.c[5]'], color='r', linestyle=linetype)")       
-      diagrams.append("ax21.plot(sim_res['time'],sim_res['bioreactor.c[4]'], color='b', linestyle=linetype)")       
-      diagrams.append("ax22.plot(sim_res['time'],sim_res['bioreactor.c[6]'], color='r', linestyle=linetype)")       
+      diagrams.append("ax11.plot(sim_res['time'],sim_res['bioreactor.c[4]'], color='b', linestyle=linetype)")       
+      diagrams.append("ax12.plot(sim_res['time'],sim_res['bioreactor.c[6]'], color='r', linestyle=linetype)")       
+      diagrams.append("ax21.plot(sim_res['time'],sim_res['bioreactor.c[5]'], color='b', linestyle=linetype)")       
+      diagrams.append("ax22.plot(sim_res['time'],sim_res['bioreactor.c[7]'], color='r', linestyle=linetype)")       
       diagrams.append("ax31.plot(sim_res['time'],sim_res['bioreactor.c[1]'], color='b', linestyle=linetype)")       
       diagrams.append("ax32.plot(sim_res['time'],sim_res['bioreactor.c[2]'], color='r', linestyle=linetype)")       
       diagrams.append("ax41.plot(sim_res['time'],sim_res['bioreactor.inlet[1].F'], color='b', linestyle=linetype)") 
-      diagrams.append("ax42.plot(sim_res['time'],sim_res['bioreactor.c[7]'], color='g', linestyle=linetype)")       
+      diagrams.append("ax42.plot(sim_res['time'],sim_res['bioreactor.c[8]'], color='g', linestyle=linetype)")       
       diagrams.append("ax51.plot(sim_res['time'],sim_res['bioreactor.V'], color='b', linestyle=linetype)") 
 
       diagrams.append("ax13.set_title('- cell specific rates')") 
-      diagrams.append("ax13.plot(sim_res['time'],-(sim_res['bioreactor.culture.q[3]']+sim_res['bioreactor.culture.qG_over']), color='r', linestyle=linetype)") 
-      diagrams.append("ax13.plot(sim_res['time'],-sim_res['bioreactor.culture.q[3]'], color='b', linestyle=linetype)") 
-      diagrams.append("ax23.plot(sim_res['time'],-(sim_res['bioreactor.culture.q[4]']+sim_res['bioreactor.culture.qGn_over']), color='r', linestyle=linetype)") 
-      diagrams.append("ax23.plot(sim_res['time'],-sim_res['bioreactor.culture.q[4]'], color='b', linestyle=linetype)") 
+      diagrams.append("ax13.plot(sim_res['time'],-(sim_res['bioreactor.culture.q[4]']+sim_res['bioreactor.culture.qG_over']), color='r', linestyle=linetype)") 
+      diagrams.append("ax13.plot(sim_res['time'],-sim_res['bioreactor.culture.q[4]'], color='b', linestyle=linetype)") 
+      diagrams.append("ax23.plot(sim_res['time'],-(sim_res['bioreactor.culture.q[5]']+sim_res['bioreactor.culture.qGn_over']), color='r', linestyle=linetype)") 
+      diagrams.append("ax23.plot(sim_res['time'],-sim_res['bioreactor.culture.q[5]'], color='b', linestyle=linetype)") 
       diagrams.append("ax33.plot(sim_res['time'],sim_res['bioreactor.culture.q[1]'], color='b', linestyle=linetype)") 
-      diagrams.append("ax43.plot(sim_res['time'],sim_res['bioreactor.culture.q[7]'], color='g', linestyle=linetype)") 
+      diagrams.append("ax43.plot(sim_res['time'],sim_res['bioreactor.culture.q[8]'], color='g', linestyle=linetype)") 
       
       diagrams.append("ax11.set_ylim(0)")
       diagrams.append("ax13.set_ylim(0)")
-      diagrams.append("ax32.set_ylim(ax31.get_ylim())")
+      diagrams.append("ax32.set_ylim(ax31.get_ylim())")   
 
       
 def describe(name, decimals=3):
@@ -503,6 +610,10 @@ def describe(name, decimals=3):
       Xd = model_get('liquidphase.Xd')[0]; 
       Xd_description = model_get_variable_description('liquidphase.Xd'); 
       Xd_mw = model_get('liquidphase.mw[2]')[0]
+
+      Xl = model.get('liquidphase.Xl')[0]; 
+      Xl_description = model.get_variable_description('liquidphase.Xl'); 
+      Xl_mw = model.get('liquidphase.mw[3]')[0]
       
       G = model_get('liquidphase.G')[0]; 
       G_description = model_get_variable_description('liquidphase.G'); 
@@ -528,6 +639,7 @@ def describe(name, decimals=3):
       print()
       print(Xv_description, 'index = ', Xv, 'molecular weight = ', Xv_mw, 'Da')
       print(Xd_description, '  index = ', Xd, 'molecular weight = ', Xd_mw, 'Da')
+      print(Xl_description, '  index = ', Xl, 'molecular weight = ', Xl_mw, 'Da')      
       print(G_description, '     index = ', G, 'molecular weight = ', G_mw, 'Da')
       print(Gn_description, '   index = ', Gn, 'molecular weight = ', Gn_mw, 'Da')
       print(L_description, '     index = ', L, 'molecular weight = ', L_mw, 'Da')
