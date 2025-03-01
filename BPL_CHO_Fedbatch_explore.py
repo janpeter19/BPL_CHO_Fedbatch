@@ -33,27 +33,19 @@
 # 2021-09-13 - Tested with BPL ver 2.0.7
 # 2021-10-02 - Updated system_info() with FMU-explore version
 # 2021-11-21 - Included bioreactor.broth_decay also after change of name
-# 2022-01-24 - Include Textbook plotTypes
-# 2022-01-29 - Updated to FMU-explore 0.8.8
+# 2022-01-26 - Updated to FMU-explore 0.8.8
 # 2022-02-01 - Updated to FMU-explore 0.8.9
-# 2022-03-31 - Updated to FMU-explore 0.9.0 - model.reset(), and par(), init()
-# 2022-04-06 - Added a diagram Textbook_3 for protein production and included alpha and beta in parDict
-# 2022-08-29 - Update with FMU-explore 0.9.2 
-# 2022-09-13 - Updated for FMU-explore 0.9.3
-# 2022-09-22 - Corrected the label of product to MAb
-# 2022-10-05 - Updated for FMU-explore 0.9.5 with disp() that do not include extra parameters with parLocation
-# 2023-02-08 - Updated to FMU-explore 0.9.6e
-# 2023-02-13 - Consolidate FMU-explore to 0.9.6 and means parCheck and par() udpate and simu() with opts as arg
-# 2023-03-22 - Minor adjustments
-# 2023-03-28 - Update FMU-explore 0.9.7
-# 2023-04-21 - Compiled for Ubuntu 20.04 and changed BPL_version
-# 2023-05-31 - Adjusted to from importlib.meetadata import version
-# 2023-09-12 - Updated to FMU-explore 0.9.8 and introduced proces diagram
-# 2024-03-06 - Update FMU-explore 0.9.9 - now with _0 replaced with _start everywhere
-# 2024-05-13 - Polish the script
-# 2024-05-20 - Updated the OpenModelica version to 1.23.0-dev
+# 2022-03-28 - Updated to FMU-explore 0.9.0 - model.reset(), and par(), init()
+# 2022-08-19 - Updated for BPL ver 2.1.0 beta and FMU-exolre 0.9.2
+# 2022-10-06 - Updated for FMU-explore 0.9.5 with disp() that do not include extra parameters with parLocation
+# 2023-02-15 - Consolidate FMU-explore to 0.9.6 and means parCheck and par() udpate and simu() with opts as arg
+# 2023-03-29 - Update FMU-explore 0.9.7
+# 2024-03-01 - Update FMU-explore 0.9.8 and 0.9.9 - now with _0 replaced with _start everywhere
+# 2024-10-16 - Update FMU-explore 1.0.0
+# 2024-11-04 - Removed GUI from process diagram
 # 2024-11-07 - Update BPL 2.3.0
-#------------------------------------------------------------------------------------------------------------------
+# 2025-02-20 - Try with CHO - extended with Xl i.e. lysed cells that bring toxicity
+#-------------------------------------------------------------------------------------------------------------------
 
 # Setup framework
 import sys
@@ -62,13 +54,13 @@ import locale
 import numpy as np 
 import matplotlib.pyplot as plt 
 import matplotlib.image as img
-import zipfile
-
+import zipfile 
+ 
 from pyfmi import load_fmu
 from pyfmi.fmi import FMUException
 
 from itertools import cycle
-from importlib.metadata import version 
+from importlib_metadata import version   # included in future Python 3.8
 
 # Set the environment - for Linux a JSON-file in the FMU is read
 if platform.system() == 'Linux': locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
@@ -85,7 +77,7 @@ if platform.system() == 'Windows':
    flag_type = 'CS'
    fmu_model ='BPL_CHO_Fedbatch_windows_jm_cs.fmu'        
    model = load_fmu(fmu_model, log_level=0)  
-elif platform.system() == 'Linux':  
+elif platform.system() == 'Linux':   
    flag_vendor = 'OM'
    flag_type = 'ME'
    if flag_vendor in ['OM','om']:
@@ -119,12 +111,12 @@ if flag_vendor in ['JM', 'jm']:
    MSL_version = model.get('MSL.version')[0]
    BPL_version = model.get('BPL.version')[0]
 elif flag_vendor in ['OM', 'om']:
-   MSL_usage = '3.2.3 - used components: RealInput, RealOutput, CombiTimeTable, Types' 
+   MSL_usage = '3.2.3 - used components: RealInput, RealOutput. CombiTimeTable, Types' 
    MSL_version = '3.2.3'
    BPL_version = 'Bioprocess Library version 2.3.0' 
 else:    
    print('There is no FMU for this platform')
-   
+
 # Simulation time
 global simulationTime; simulationTime = 120.0
 global prevFinalTime; prevFinalTime = 0
@@ -135,7 +127,7 @@ timeDiscreteStates = {}
 # Define a minimal compoent list of the model as a starting point for describe('parts')
 component_list_minimum = ['bioreactor', 'bioreactor.culture', 'bioreactor.broth_decay']
 
-# Provide process diagram on disk
+# Process diagram
 fmu_process_diagram ='BPL_CHO_Fedbatch_process_diagram_om.png'
 
 #------------------------------------------------------------------------------------------------------------------
@@ -151,7 +143,8 @@ stateDict.update(timeDiscreteStates)
 global parDict; parDict = {}
 parDict['V_start']    = 0.35          # L
 parDict['VXv_start'] = 0.35*0.2       
-parDict['VXd_start'] = 0.0            
+parDict['VXd_start'] = 0.0  
+parDict['VXl_start'] = 0.0              
 parDict['VG_start'] = 0.35*18.0       
 parDict['VGn_start'] = 0.35*2.4       
 parDict['VL_start'] = 0.0             
@@ -162,51 +155,54 @@ parDict['qG_max2'] = 0.0384
 parDict['qGn_max1'] = 0.1238
 parDict['qGn_max2'] = 0.0218
 parDict['mu_d_max'] = 0.1302
+parDict['k_toxic'] = 0.0
+parDict['alpha'] = 0
+parDict['beta'] = 10.0/24
 
-parDict['k_lysis'] = 0.0
-
-parDict['alpha'] = -1.0
-parDict['beta'] = 0.01
+parDict['k_lysis_v'] = 0.0
+parDict['k_lysis_d'] = 0.0
 
 parDict['G_in']  =  15.0          # mM
 parDict['Gn_in']  =  4.0          # mM
 parDict['t0'] =   0.0             # h
 parDict['F0'] =   0.0             # L/h
-parDict['t1'] =  60.0             # h
-parDict['F1'] =   0.00            # L/h
-parDict['t2'] = 992.0             # h
-parDict['F2'] =   0.00            # L/h
-parDict['t3'] = 993.0             # h
+parDict['t1'] =  50.0             # h
+parDict['F1'] =   0.0012          # L/h
+parDict['t2'] =  64.0             # h
+parDict['F2'] =   0.0020          # L/h
+parDict['t3'] =  78.0             # h
 parDict['F3'] =   0.0040          # L/h
-parDict['t4'] = 994.0             # h
+parDict['t4'] =  92.0             # h
 parDict['F4'] =   0.0080          # L/h
-parDict['t5'] = 995.0             # h
+parDict['t5'] = 106.0             # h
 parDict['F5'] =   0.012           # L/h
-parDict['t6'] = 996.0             # h
+parDict['t6'] = 150.0             # h
 parDict['F6'] =   0.012           # L/h
 
 global parLocation; parLocation = {}
 parLocation['V_start'] = 'bioreactor.V_start'
 parLocation['VXv_start'] = 'bioreactor.m_start[1]'
 parLocation['VXd_start'] = 'bioreactor.m_start[2]'
-parLocation['VG_start'] = 'bioreactor.m_start[3]'
-parLocation['VGn_start'] = 'bioreactor.m_start[4]'
-parLocation['VL_start'] = 'bioreactor.m_start[5]'
-parLocation['VN_start'] = 'bioreactor.m_start[6]'
+parLocation['VXl_start'] = 'bioreactor.m_start[3]'
+parLocation['VG_start'] = 'bioreactor.m_start[4]'
+parLocation['VGn_start'] = 'bioreactor.m_start[5]'
+parLocation['VL_start'] = 'bioreactor.m_start[6]'
+parLocation['VN_start'] = 'bioreactor.m_start[7]'
 
 parLocation['qG_max1'] = 'bioreactor.culture.qG_max1'
 parLocation['qG_max2'] = 'bioreactor.culture.qG_max2'
 parLocation['qGn_max1'] = 'bioreactor.culture.qGn_max1'
 parLocation['qGn_max2'] = 'bioreactor.culture.qGn_max2'
 parLocation['mu_d_max'] = 'bioreactor.culture.mu_d_max'
-
+parLocation['k_toxic'] = 'bioreactor.culture.k_toxic'
 parLocation['alpha'] = 'bioreactor.culture.alpha'
 parLocation['beta'] = 'bioreactor.culture.beta'
 
-parLocation['k_lysis'] = 'bioreactor.broth_decay.k_lysis'
+parLocation['k_lysis_v'] = 'bioreactor.broth_decay.k_lysis_v'
+parLocation['k_lysis_d'] = 'bioreactor.broth_decay.k_lysis_d'
 
-parLocation['G_in'] = 'feedtank.c_in[3]'
-parLocation['Gn_in'] = 'feedtank.c_in[4]'
+parLocation['G_in'] = 'feedtank.c_in[4]'
+parLocation['Gn_in'] = 'feedtank.c_in[5]'
 
 parLocation['t0'] = 'dosagescheme.table[1,1]'
 parLocation['F0'] = 'dosagescheme.table[1,2]'
@@ -235,12 +231,6 @@ parCheck.append("parDict['VG_start'] >= 0")
 parCheck.append("parDict['VGn_start'] >= 0")
 parCheck.append("parDict['VL_start'] >= 0")
 parCheck.append("parDict['VN_start'] >= 0")
-parCheck.append("parDict['t0'] < parDict['t1']")
-parCheck.append("parDict['t1'] < parDict['t2']")
-parCheck.append("parDict['t2'] < parDict['t3']")
-parCheck.append("parDict['t3'] < parDict['t4']")
-parCheck.append("parDict['t4'] < parDict['t5']")
-parCheck.append("parDict['t5'] < parDict['t6']")
 
 # Create list of diagrams to be plotted by simu()
 global diagrams
@@ -252,14 +242,13 @@ def newplot(title='Fedbatch cultivation',  plotType='TimeSeries'):
    
    # Reset pens
    setLines()
-
+   
    # Globals
-   global ax11, ax12, ax21, ax22, ax31, ax32, ax41, ax42, ax51, ax52  
-   global ax13, ax23, ax33, ax43
+   global ax11, ax12, ax13, ax21, ax22, ax23, ax31, ax32, ax33, ax41, ax42, ax43, ax51    
     
    # Plot diagram 
    if plotType == 'TimeSeries':
- 
+
       plt.figure()
       ax11 = plt.subplot(4,2,1); ax12 = plt.subplot(4,2,2)
       ax21 = plt.subplot(4,2,3); ax22 = plt.subplot(4,2,4)
@@ -280,10 +269,10 @@ def newplot(title='Fedbatch cultivation',  plotType='TimeSeries'):
       ax22.set_ylabel('Ammonia conc [mM]')
 
       ax31.grid()
-      ax31.set_ylabel('Viable cell conc [1E6/mL]')
+      ax31.set_ylabel('Viable cells conc [1E6/mL]')
 
       ax32.grid()
-      ax32.set_ylabel('Dead cell conc [1E6/mL]')
+      ax32.set_ylabel('Dead cells conc [1E6/mL]')
 
       ax41.grid()
       ax41.set_ylabel('Feed rate [L/h]')
@@ -295,133 +284,111 @@ def newplot(title='Fedbatch cultivation',  plotType='TimeSeries'):
 
       # List of commands to be executed by simu() after a simulation  
       diagrams.clear()
-      diagrams.append("ax11.plot(t,sim_res['bioreactor.c[3]'], color='b', linestyle=linetype)")       
-      diagrams.append("ax12.plot(t,sim_res['bioreactor.c[5]'], color='r', linestyle=linetype)")       
-      diagrams.append("ax21.plot(t,sim_res['bioreactor.c[4]'], color='b', linestyle=linetype)")       
-      diagrams.append("ax22.plot(t,sim_res['bioreactor.c[6]'], color='r', linestyle=linetype)")       
+      diagrams.append("ax11.plot(t,sim_res['bioreactor.c[4]'], color='b', linestyle=linetype)")       
+      diagrams.append("ax12.plot(t,sim_res['bioreactor.c[6]'], color='r', linestyle=linetype)")       
+      diagrams.append("ax21.plot(t,sim_res['bioreactor.c[5]'], color='b', linestyle=linetype)")       
+      diagrams.append("ax22.plot(t,sim_res['bioreactor.c[7]'], color='r', linestyle=linetype)")       
       diagrams.append("ax31.plot(t,sim_res['bioreactor.c[1]'], color='b', linestyle=linetype)")       
-      diagrams.append("ax32.plot(t,sim_res['bioreactor.c[2]'], color='r', linestyle=linetype)")       
+      diagrams.append("ax32.plot(t,sim_res['bioreactor.c[2]'], color='r', linestyle=linetype)")        
+      diagrams.append("ax41.plot(t,sim_res['bioreactor.inlet[1].F'], color='b', linestyle=linetype)")       
+      diagrams.append("ax42.plot(t,sim_res['bioreactor.V'], color='b', linestyle=linetype)") 
+   
+   if plotType == 'TimeSeries1':
+
+      plt.figure()
+      ax11 = plt.subplot(4,2,1); ax12 = plt.subplot(4,2,2)
+      ax21 = plt.subplot(4,2,3); ax22 = plt.subplot(4,2,4)
+      ax31 = plt.subplot(4,2,5); ax32 = plt.subplot(4,2,6)
+      ax41 = plt.subplot(4,2,7); ax42 = plt.subplot(4,2,8)    
+
+      ax11.set_title(title)
+      ax11.grid()
+      ax11.set_ylabel('Glucose conc [mM]')
+
+      ax12.grid()
+      ax12.set_ylabel('Lactate conc [mM]')
+
+      ax21.grid()
+      ax21.set_ylabel('Glutamine conc [mM]')
+
+      ax22.grid()
+      ax22.set_ylabel('Ammonia conc [mM]')
+
+      ax31.grid()
+      ax31.set_ylabel('Viable cells conc [1E6/mL]')
+
+      ax32.grid()
+      ax32.set_ylabel('Dead and lysed cells [1E6/mL]')
+
+      ax41.grid()
+      ax41.set_ylabel('Feed rate [L/h]')
+      ax41.set_xlabel('Time [h]')
+
+      ax42.grid()
+      ax42.set_ylabel('Volume [L]')
+      ax42.set_xlabel('Time [h]')
+
+      # List of commands to be executed by simu() after a simulation  
+      diagrams.clear()
+      diagrams.append("ax11.plot(t,sim_res['bioreactor.c[4]'], color='b', linestyle=linetype)")       
+      diagrams.append("ax12.plot(t,sim_res['bioreactor.c[6]'], color='r', linestyle=linetype)")       
+      diagrams.append("ax21.plot(t,sim_res['bioreactor.c[5]'], color='b', linestyle=linetype)")       
+      diagrams.append("ax22.plot(t,sim_res['bioreactor.c[7]'], color='r', linestyle=linetype)")       
+      diagrams.append("ax31.plot(t,sim_res['bioreactor.c[1]'], color='b', linestyle=linetype)")       
+      diagrams.append("ax32.plot(t,sim_res['bioreactor.c[2]'], color='r', linestyle=linetype)")  
+      diagrams.append("ax32.plot(t,sim_res['bioreactor.c[3]'], color='k', linestyle=linetype)")       
       diagrams.append("ax41.plot(t,sim_res['bioreactor.inlet[1].F'], color='b', linestyle=linetype)")       
       diagrams.append("ax42.plot(t,sim_res['bioreactor.V'], color='b', linestyle=linetype)") 
 
-   if plotType == 'Textbook_1':
- 
+    
+   # Plot diagram 
+   if plotType == 'TimeSeries2':
+   
       plt.figure()
-      ax11 = plt.subplot(5,2,1); ax12 = plt.subplot(5,2,2)
-      ax21 = plt.subplot(5,2,3); ax22 = plt.subplot(5,2,4)
-      ax31 = plt.subplot(5,2,5); ax32 = plt.subplot(5,2,6)
-      ax41 = plt.subplot(5,2,7)
-      ax51 = plt.subplot(5,2,9) 
+      ax11 = plt.subplot(4,2,1); ax12 = plt.subplot(4,2,2)
+      ax21 = plt.subplot(4,2,3); ax22 = plt.subplot(4,2,4)
+      ax31 = plt.subplot(4,2,5); ax32 = plt.subplot(4,2,6)
+      ax41 = plt.subplot(4,2,7); ax42 = plt.subplot(4,2,8)    
 
       ax11.set_title(title)
       ax11.grid()
-      ax11.set_ylabel('Glucose [mM]')
+      ax11.set_ylabel('Glucose conc [mM]')
 
       ax12.grid()
-      ax12.set_ylabel('Lactate [mM]')
+      ax12.set_ylabel('Lactate conc [mM]')
 
       ax21.grid()
-      ax21.set_ylabel('Glutamine [mM]')
+      ax21.set_ylabel('Glutamine conc [mM]')
 
       ax22.grid()
-      ax22.set_ylabel('Ammonia [mM]')
+      ax22.set_ylabel('Ammonia conc [mM]')
 
       ax31.grid()
-      ax31.set_ylabel('Viable cell [1E6/mL]')
+      ax31.set_ylabel('Viable cells [1E6]')
 
       ax32.grid()
-      ax32.set_ylabel('Dead cell conc [1E6/mL]')
-      ax32.set_xlabel('Time [h]')
+      ax32.set_ylabel('Dead and lysed cells [1E6/mL]')
 
       ax41.grid()
       ax41.set_ylabel('Feed rate [L/h]')
-      
-      ax51.grid()
-      ax51.set_ylabel('Volume [L]')      
-      ax51.set_xlabel('Time [h]')
+      ax41.set_xlabel('Time [h]')
 
+      ax42.grid()
+      ax42.set_ylabel('Volume [L]')
+      ax42.set_xlabel('Time [h]')
 
       # List of commands to be executed by simu() after a simulation  
       diagrams.clear()
-      diagrams.append("ax11.plot(t,sim_res['bioreactor.c[3]'], color='b', linestyle=linetype)")       
-      diagrams.append("ax12.plot(t,sim_res['bioreactor.c[5]'], color='r', linestyle=linetype)")       
-      diagrams.append("ax21.plot(t,sim_res['bioreactor.c[4]'], color='b', linestyle=linetype)")       
-      diagrams.append("ax22.plot(t,sim_res['bioreactor.c[6]'], color='r', linestyle=linetype)")       
-      diagrams.append("ax31.plot(t,sim_res['bioreactor.c[1]'], color='b', linestyle=linetype)")       
-      diagrams.append("ax32.plot(t,sim_res['bioreactor.c[2]'], color='r', linestyle=linetype)")       
+      diagrams.append("ax11.plot(t,sim_res['bioreactor.c[4]'], color='b', linestyle=linetype)")       
+      diagrams.append("ax12.plot(t,sim_res['bioreactor.c[6]'], color='r', linestyle=linetype)")       
+      diagrams.append("ax21.plot(t,sim_res['bioreactor.c[5]'], color='b', linestyle=linetype)")       
+      diagrams.append("ax22.plot(t,sim_res['bioreactor.c[7]'], color='r', linestyle=linetype)")       
+      diagrams.append("ax31.plot(t,sim_res['bioreactor.m[1]'], color='b', linestyle=linetype)")       
+      diagrams.append("ax32.plot(t,sim_res['bioreactor.c[2]'], color='r', linestyle=linetype)")  
+      diagrams.append("ax32.plot(t,sim_res['bioreactor.c[3]'], color='k', linestyle=linetype)")       
       diagrams.append("ax41.plot(t,sim_res['bioreactor.inlet[1].F'], color='b', linestyle=linetype)")       
-      diagrams.append("ax51.plot(t,sim_res['bioreactor.V'], color='b', linestyle=linetype)") 
-
-   if plotType == 'Textbook_2':
- 
-      plt.figure()
-      ax11 = plt.subplot(5,3,1); ax12 = plt.subplot(5,3,2); ax13 = plt.subplot(5,3,3)
-      ax21 = plt.subplot(5,3,4); ax22 = plt.subplot(5,3,5); ax23 = plt.subplot(5,3,6)
-      ax31 = plt.subplot(5,3,7); ax32 = plt.subplot(5,3,8); ax33 = plt.subplot(5,3,9)
-      ax41 = plt.subplot(5,3,10)
-      ax51 = plt.subplot(5,3,13) 
-
-      ax11.set_title(title)
-      ax11.grid()
-      ax11.set_ylabel('Glucose [mM]')
-
-      ax12.grid()
-      ax12.set_ylabel('Lactate [mM]')
+      diagrams.append("ax42.plot(t,sim_res['bioreactor.V'], color='b', linestyle=linetype)") 
       
-      ax13.grid()
-      ax13.set_ylabel('qG []')
-
-      ax21.grid()
-      ax21.set_ylabel('Glutamine [mM]')
-
-      ax22.grid()
-      ax22.set_ylabel('Ammonia [mM]')
-      
-      ax23.grid()
-      ax23.set_ylabel('qGn []')
-
-      ax31.grid()
-      ax31.set_ylabel('Viable cell [1E6/mL]')
-
-      ax32.grid()
-      ax32.set_ylabel('Dead cell conc [1E6/mL]')
-      ax32.set_xlabel('Time [h]')
-      
-      ax33.grid()
-      ax33.set_ylabel('mu [1/h]')
-      ax33.set_xlabel('Time [h]')
-
-      ax41.grid()
-      ax41.set_ylabel('Feed rate [L/h]')
-      
-      ax51.grid()
-      ax51.set_ylabel('Volume [L]')      
-      ax51.set_xlabel('Time [h]')
-      
-      # List of commands to be executed by simu() after a simulation  
-      diagrams.clear()
-      diagrams.append("ax11.plot(t,sim_res['bioreactor.c[3]'], color='b', linestyle=linetype)")       
-      diagrams.append("ax12.plot(t,sim_res['bioreactor.c[5]'], color='r', linestyle=linetype)")       
-      diagrams.append("ax21.plot(t,sim_res['bioreactor.c[4]'], color='b', linestyle=linetype)")       
-      diagrams.append("ax22.plot(t,sim_res['bioreactor.c[6]'], color='r', linestyle=linetype)")       
-      diagrams.append("ax31.plot(t,sim_res['bioreactor.c[1]'], color='b', linestyle=linetype)")       
-      diagrams.append("ax32.plot(t,sim_res['bioreactor.c[2]'], color='r', linestyle=linetype)")       
-      diagrams.append("ax41.plot(t,sim_res['bioreactor.inlet[1].F'], color='b', linestyle=linetype)")       
-      diagrams.append("ax51.plot(t,sim_res['bioreactor.V'], color='b', linestyle=linetype)") 
-
-      diagrams.append("ax13.set_title('- microscopic world')") 
-      diagrams.append("ax13.plot(t,-(sim_res['bioreactor.culture.q[3]']+sim_res['bioreactor.culture.qG_over']), color='r', linestyle=linetype)") 
-      diagrams.append("ax13.plot(t,-sim_res['bioreactor.culture.q[3]'], color='b', linestyle=linetype)") 
-      diagrams.append("ax23.plot(t,-(sim_res['bioreactor.culture.q[4]']+sim_res['bioreactor.culture.qGn_over']), color='r', linestyle=linetype)") 
-      diagrams.append("ax23.plot(t,-sim_res['bioreactor.culture.q[4]'], color='b', linestyle=linetype)") 
-      diagrams.append("ax33.plot(t,sim_res['bioreactor.culture.q[1]'], color='b', linestyle=linetype)") 
-      
-      diagrams.append("ax11.set_ylim(0)")
-      diagrams.append("ax13.set_ylim(0)")
-      #diagrams.append("ax31.set_ylim(0)")
-      diagrams.append("ax32.set_ylim(ax31.get_ylim())")
-      #diagrams.append("plt.show()")
-
    if plotType == 'Textbook_3':
  
       plt.figure()
@@ -476,27 +443,27 @@ def newplot(title='Fedbatch cultivation',  plotType='TimeSeries'):
       
       # List of commands to be executed by simu() after a simulation  
       diagrams.clear()
-      diagrams.append("ax11.plot(t,sim_res['bioreactor.c[3]'], color='b', linestyle=linetype)")       
-      diagrams.append("ax12.plot(t,sim_res['bioreactor.c[5]'], color='r', linestyle=linetype)")       
-      diagrams.append("ax21.plot(t,sim_res['bioreactor.c[4]'], color='b', linestyle=linetype)")       
-      diagrams.append("ax22.plot(t,sim_res['bioreactor.c[6]'], color='r', linestyle=linetype)")       
+      diagrams.append("ax11.plot(t,sim_res['bioreactor.c[4]'], color='b', linestyle=linetype)")       
+      diagrams.append("ax12.plot(t,sim_res['bioreactor.c[6]'], color='r', linestyle=linetype)")       
+      diagrams.append("ax21.plot(t,sim_res['bioreactor.c[5]'], color='b', linestyle=linetype)")       
+      diagrams.append("ax22.plot(t,sim_res['bioreactor.c[7]'], color='r', linestyle=linetype)")       
       diagrams.append("ax31.plot(t,sim_res['bioreactor.c[1]'], color='b', linestyle=linetype)")       
       diagrams.append("ax32.plot(t,sim_res['bioreactor.c[2]'], color='r', linestyle=linetype)")       
       diagrams.append("ax41.plot(t,sim_res['bioreactor.inlet[1].F'], color='b', linestyle=linetype)") 
-      diagrams.append("ax42.plot(t,sim_res['bioreactor.c[7]'], color='g', linestyle=linetype)")       
+      diagrams.append("ax42.plot(t,sim_res['bioreactor.c[8]'], color='g', linestyle=linetype)")       
       diagrams.append("ax51.plot(t,sim_res['bioreactor.V'], color='b', linestyle=linetype)") 
 
       diagrams.append("ax13.set_title('- cell specific rates')") 
-      diagrams.append("ax13.plot(t,-(sim_res['bioreactor.culture.q[3]']+sim_res['bioreactor.culture.qG_over']), color='r', linestyle=linetype)") 
-      diagrams.append("ax13.plot(t,-sim_res['bioreactor.culture.q[3]'], color='b', linestyle=linetype)") 
-      diagrams.append("ax23.plot(t,-(sim_res['bioreactor.culture.q[4]']+sim_res['bioreactor.culture.qGn_over']), color='r', linestyle=linetype)") 
-      diagrams.append("ax23.plot(t,-sim_res['bioreactor.culture.q[4]'], color='b', linestyle=linetype)") 
+      diagrams.append("ax13.plot(t,-(sim_res['bioreactor.culture.q[4]']+sim_res['bioreactor.culture.qG_over']), color='r', linestyle=linetype)") 
+      diagrams.append("ax13.plot(t,-sim_res['bioreactor.culture.q[4]'], color='b', linestyle=linetype)") 
+      diagrams.append("ax23.plot(t,-(sim_res['bioreactor.culture.q[5]']+sim_res['bioreactor.culture.qGn_over']), color='r', linestyle=linetype)") 
+      diagrams.append("ax23.plot(t,-sim_res['bioreactor.culture.q[5]'], color='b', linestyle=linetype)") 
       diagrams.append("ax33.plot(t,sim_res['bioreactor.culture.q[1]'], color='b', linestyle=linetype)") 
-      diagrams.append("ax43.plot(t,sim_res['bioreactor.culture.q[7]'], color='g', linestyle=linetype)") 
+      diagrams.append("ax43.plot(t,sim_res['bioreactor.culture.q[8]'], color='g', linestyle=linetype)") 
       
       diagrams.append("ax11.set_ylim(0)")
       diagrams.append("ax13.set_ylim(0)")
-      diagrams.append("ax32.set_ylim(ax31.get_ylim())")
+      diagrams.append("ax32.set_ylim(ax31.get_ylim())")      
 
       
 def describe(name, decimals=3):
@@ -514,31 +481,36 @@ def describe(name, decimals=3):
       Xd = model.get('liquidphase.Xd')[0]; 
       Xd_description = model.get_variable_description('liquidphase.Xd'); 
       Xd_mw = model.get('liquidphase.mw[2]')[0]
+
+      Xl = model.get('liquidphase.Xl')[0]; 
+      Xl_description = model.get_variable_description('liquidphase.Xl'); 
+      Xl_mw = model.get('liquidphase.mw[3]')[0]
       
       G = model.get('liquidphase.G')[0]; 
       G_description = model.get_variable_description('liquidphase.G'); 
-      G_mw = model.get('liquidphase.mw[3]')[0]
+      G_mw = model.get('liquidphase.mw[4]')[0]
       
       Gn = model.get('liquidphase.Gn')[0]; 
       Gn_description = model.get_variable_description('liquidphase.Gn'); 
-      Gn_mw = model.get('liquidphase.mw[4]')[0]
+      Gn_mw = model.get('liquidphase.mw[5]')[0]
       
       L = model.get('liquidphase.L')[0]; 
       L_description = model.get_variable_description('liquidphase.L'); 
-      L_mw = model.get('liquidphase.mw[5]')[0]
+      L_mw = model.get('liquidphase.mw[6]')[0]
       
       N = model.get('liquidphase.N')[0]; 
       N_description = model.get_variable_description('liquidphase.N'); 
-      N_mw = model.get('liquidphase.mw[6]')[0]
+      N_mw = model.get('liquidphase.mw[7]')[0]
       
       Pr = model.get('liquidphase.Pr')[0]; 
       Pr_description = model.get_variable_description('liquidphase.Pr'); 
-      Pr_mw = model.get('liquidphase.mw[7]')[0]
+      Pr_mw = model.get('liquidphase.mw[8]')[0]
 
       print('Reactor broth substances included in the model')
       print()
       print(Xv_description, 'index = ', Xv, 'molecular weight = ', Xv_mw, 'Da')
       print(Xd_description, '  index = ', Xd, 'molecular weight = ', Xd_mw, 'Da')
+      print(Xl_description, '  index = ', Xl, 'molecular weight = ', Xl_mw, 'Da')      
       print(G_description, '     index = ', G, 'molecular weight = ', G_mw, 'Da')
       print(Gn_description, '   index = ', Gn, 'molecular weight = ', Gn_mw, 'Da')
       print(L_description, '     index = ', L, 'molecular weight = ', L_mw, 'Da')
@@ -547,7 +519,7 @@ def describe(name, decimals=3):
 
    elif name in ['parts']:
       describe_parts(component_list_minimum)
-      
+
    elif name in ['MSL']:
       describe_MSL()
 
