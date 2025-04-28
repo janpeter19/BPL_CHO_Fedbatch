@@ -45,6 +45,7 @@
 # 2024-11-04 - Removed GUI from process diagram
 # 2024-11-07 - Update BPL 2.3.0
 # 2025-02-20 - Try with CHO - extended with Xl i.e. lysed cells that bring toxicity
+# 2025-04-15 - Added describe('process') using model.get_description() and the show text string for the main model
 #-------------------------------------------------------------------------------------------------------------------
 
 # Setup framework
@@ -469,10 +470,13 @@ def newplot(title='Fedbatch cultivation',  plotType='TimeSeries'):
 def describe(name, decimals=3):
    """Look up description of culture, media, as well as parameters and variables in the model code"""
 
-   if name == 'culture':
+   if name == 'process':
+      model.get_description()
+
+   elif name == 'culture':
       print('Reactor culture CHO-MAb - cell line HB-58 American Culture Collection ATCC') 
 
-   elif name in ['broth', 'liquidphase', 'liquid-phase''media']:
+   elif name in ['broth', 'liquidphase', 'liquid-phase']:
 
       Xv  = model.get('liquidphase.Xv')[0]; 
       Xv_description = model.get_variable_description('liquidphase.Xv'); 
