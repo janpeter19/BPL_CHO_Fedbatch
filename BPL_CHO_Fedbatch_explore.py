@@ -46,6 +46,7 @@
 # 2024-11-07 - Update BPL 2.3.0
 # 2025-02-20 - Try with CHO - extended with Xl i.e. lysed cells that bring toxicity
 # 2025-04-15 - Added describe('process') using model.get_description() and the show text string for the main model
+# 2025-06-12 - Test MSL 4.1.0 with OpenModelica genreated FMU
 #-------------------------------------------------------------------------------------------------------------------
 
 # Setup framework
@@ -112,8 +113,8 @@ if flag_vendor in ['JM', 'jm']:
    MSL_version = model.get('MSL.version')[0]
    BPL_version = model.get('BPL.version')[0]
 elif flag_vendor in ['OM', 'om']:
-   MSL_usage = '3.2.3 - used components: RealInput, RealOutput. CombiTimeTable, Types' 
-   MSL_version = '3.2.3'
+   MSL_usage = '4.1.0 - used components: RealInput, RealOutput. CombiTimeTable, Types' 
+   MSL_version = '4.1.0'
    BPL_version = 'Bioprocess Library version 2.3.0' 
 else:    
    print('There is no FMU for this platform')
