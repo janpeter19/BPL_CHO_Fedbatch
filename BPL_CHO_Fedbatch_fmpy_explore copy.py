@@ -111,33 +111,33 @@ fmu_process_diagram ='BPL_CHO_Fedbatch_process_diagram_om.png'
 #  Specific application constructs: stateValue, parValue, parLocation, parCheck, diagrams, newplot(), describe()
 #------------------------------------------------------------------------------------------------------------------
    
-# Create stateValue that later will be used to store final state and used for initialization in 'cont':
-stateValue =  {}
-stateValue = {variable.derivative.name:None for variable in model_description.modelVariables \
+# Create stateDict that later will be used to store final state and used for initialization in 'cont':
+stateDict =  {}
+stateDict = {variable.derivative.name:None for variable in model_description.modelVariables \
                                             if variable.derivative is not None}
-stateValue.update(timeDiscreteStates) 
+stateDict.update(timeDiscreteStates) 
 
-stateValueInitial = {}
-for key in stateValue.keys():
+global stateDictInitial; stateDictInitial = {}
+for key in stateDict.keys():
     if not key[-1] == ']':
          if key[-3:] == 'I.y':
-            stateValueInitial[key] = key[:-10]+'I_start'
+            stateDictInitial[key] = key[:-10]+'I_start'
          elif key[-3:] == 'D.x':
-            stateValueInitial[key] = key[:-10]+'D_start'
+            stateDictInitial[key] = key[:-10]+'D_start'
          else:
-            stateValueInitial[key] = key+'_start'
+            stateDictInitial[key] = key+'_start'
     elif key[-3] == '[':
-        stateValueInitial[key] = key[:-3]+'_start'+key[-3:]
+        stateDictInitial[key] = key[:-3]+'_start'+key[-3:]
     elif key[-4] == '[':
-        stateValueInitial[key] = key[:-4]+'_start'+key[-4:]
+        stateDictInitial[key] = key[:-4]+'_start'+key[-4:]
     elif key[-5] == '[':
-        stateValueInitial[key] = key[:-5]+'_start'+key[-5:] 
+        stateDictInitial[key] = key[:-5]+'_start'+key[-5:] 
     else:
         print('The state vector has more than 1000 states')
         break
 
-stateValueInitialLoc = {}
-for value in stateValueInitial.values(): stateValueInitialLoc[value] = value
+global stateDictInitialLoc; stateDictInitialLoc = {}
+for value in stateDictInitial.values(): stateDictInitialLoc[value] = value
 
 # Create parValue
 parValue = {}
@@ -793,13 +793,12 @@ def show(diagrams=diagrams):
 
 # Define simulation
 def simu(simulationTime=simulationTime, mode='Initial', options=opts_std, diagrams=diagrams, \
-         timeDiscreteStates=timeDiscreteStates, stateValue=stateValue, \
-         stateValueInitial=stateValueInitial, stateValueInitialLoc=stateValueInitialLoc, \
+         timeDiscreteStates=timeDiscreteStates, stateDict=stateDict, \
          parValue=parValue, parLocation=parLocation, fmu_model=fmu_model):  
    """Model loaded and given intial values and parameter before, and plot window also setup before."""   
    
    # Global variables
-   global sim_res, prevFinalTime, start_values
+   global sim_res, prevFinalTime, stateDictInitial, stateDictInitialLoc, start_values
    
    # Simulation flag
    simulationDone = False
@@ -829,7 +828,7 @@ def simu(simulationTime=simulationTime, mode='Initial', options=opts_std, diagra
          record_events = True,
          start_values = start_values,
          fmi_call_logger = None,
-         output = list(set(extract_variables(diagrams) + list(stateValue.keys()) + key_variables))
+         output = list(set(extract_variables(diagrams) + list(stateDict.keys()) + key_variables))
       )
       
       simulationDone = True
@@ -844,14 +843,14 @@ def simu(simulationTime=simulationTime, mode='Initial', options=opts_std, diagra
          parValueRed = parValue.copy()
          parLocationRed = parLocation.copy()
          for key in parValue.keys():
-            if parLocation[key] in stateValueInitial.values(): 
+            if parLocation[key] in stateDictInitial.values(): 
                del parValueRed[key]  
                del parLocationRed[key]
-         parLocationMod = dict(list(parLocationRed.items()) + list(stateValueInitialLoc.items()))
+         parLocationMod = dict(list(parLocationRed.items()) + list(stateDictInitialLoc.items()))
    
          # Create parValueMod and parLocationMod
          parValueMod = dict(list(parValueRed.items()) + 
-            [(stateValueInitial[key], stateValue[key]) for key in stateValue.keys()])      
+            [(stateDictInitial[key], stateDict[key]) for key in stateDict.keys()])      
 
          start_values = {parLocationMod[k]:parValueMod[k] for k in parValueMod.keys()}
   
@@ -865,7 +864,7 @@ def simu(simulationTime=simulationTime, mode='Initial', options=opts_std, diagra
             record_events = True,
             start_values = start_values,
             fmi_call_logger = None,
-            output = list(set(extract_variables(diagrams) + list(stateValue.keys()) + key_variables))
+            output = list(set(extract_variables(diagrams) + list(stateDict.keys()) + key_variables))
          )
       
          simulationDone = True
@@ -879,8 +878,8 @@ def simu(simulationTime=simulationTime, mode='Initial', options=opts_std, diagra
       linetype = next(linecycler)    
       for command in diagrams: eval(command)
    
-      # Store final state values in stateValue:        
-      for key in stateValue.keys(): stateValue[key] = model_get(key)  
+      # Store final state values in stateDict:        
+      for key in stateDict.keys(): stateDict[key] = model_get(key)  
          
       # Store time from where simulation will start next time
       prevFinalTime = sim_res['time'][-1]
