@@ -24,7 +24,6 @@
 # 2025-11-08 - FMU-explore 1.0.2
 # 2025-11-13 - Test FMU-explore 1.0.1h and global declaration removed outside functions
 # 2025-11-14 - FMU-explore 1.0.2 corrected
-# 2025-11-19 - Adjusted to read excel-file and use of pandas
 #-------------------------------------------------------------------------------------------------------------------
 
 # Setup framework
@@ -35,7 +34,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.image as img
 import zipfile 
-import pandas as pd
 
 from fmpy import simulate_fmu
 from fmpy import read_model_description
@@ -80,6 +78,7 @@ elif flag_type in ['ME', 'me']:
 else:    
    print('There is no FMU for this platform')
 
+  
 # Provide various MSL and BPL versions
 if flag_vendor in ['JM', 'jm']:
    constants = [v for v in model_description.modelVariables if v.causality == 'local'] 
@@ -143,9 +142,89 @@ for value in stateValueInitial.values(): stateValueInitialLoc[value] = value
 
 # Create parValue
 parValue = {}
+parValue['V_start']    = 0.35          # L
+parValue['VXv_start'] = 0.35*0.2       
+parValue['VXd_start'] = 0.0  
+parValue['VXl_start'] = 0.0             
+parValue['VG_start'] = 0.35*18.0       
+parValue['VGn_start'] = 0.35*2.4       
+parValue['VL_start'] = 0.0             
+parValue['VN_start'] = 0.0             
 
-# Create dictionary of parameters full name - to get values in the notebook
+parValue['qG_max1'] = 0.2971
+parValue['qG_max2'] = 0.0384
+parValue['qGn_max1'] = 0.1238
+parValue['qGn_max2'] = 0.0218
+parValue['mu_d_max'] = 0.1302
+parValue['k_toxic'] = 0.0
+parValue['alpha'] = 0
+parValue['beta'] = 10.0/24
+
+parValue['k_lysis_v'] = 0.0
+parValue['k_lysis_d'] = 0.0
+
+parValue['alpha'] = -1.0
+parValue['beta'] = 0.01
+
+parValue['G_in']  =  15.0          # mM
+parValue['Gn_in']  =  4.0          # mM
+parValue['t0'] =   0.0             # h
+parValue['F0'] =   0.0             # L/h
+parValue['t1'] =  60.0             # h
+parValue['F1'] =   0.00            # L/h
+parValue['t2'] = 992.0             # h
+parValue['F2'] =   0.00            # L/h
+parValue['t3'] = 993.0             # h
+parValue['F3'] =   0.0040          # L/h
+parValue['t4'] = 994.0             # h
+parValue['F4'] =   0.0080          # L/h
+parValue['t5'] = 995.0             # h
+parValue['F5'] =   0.012           # L/h
+parValue['t6'] = 996.0             # h
+parValue['F6'] =   0.012           # L/h
+
 parLocation = {}
+parLocation['V_start'] = 'bioreactor.V_start'
+parLocation['VXv_start'] = 'bioreactor.m_start[1]'
+parLocation['VXd_start'] = 'bioreactor.m_start[2]'
+parLocation['VXl_start'] = 'bioreactor.m_start[3]'
+parLocation['VG_start'] = 'bioreactor.m_start[4]'
+parLocation['VGn_start'] = 'bioreactor.m_start[5]'
+parLocation['VL_start'] = 'bioreactor.m_start[6]'
+parLocation['VN_start'] = 'bioreactor.m_start[7]'
+
+parLocation['qG_max1'] = 'bioreactor.culture.qG_max1'
+parLocation['qG_max2'] = 'bioreactor.culture.qG_max2'
+parLocation['qGn_max1'] = 'bioreactor.culture.qGn_max1'
+parLocation['qGn_max2'] = 'bioreactor.culture.qGn_max2'
+parLocation['mu_d_max'] = 'bioreactor.culture.mu_d_max'
+parLocation['k_toxic'] = 'bioreactor.culture.k_toxic'
+parLocation['alpha'] = 'bioreactor.culture.alpha'
+parLocation['beta'] = 'bioreactor.culture.beta'
+
+parLocation['k_lysis_v'] = 'bioreactor.broth_decay.k_lysis_v'
+parLocation['k_lysis_d'] = 'bioreactor.broth_decay.k_lysis_d'
+
+parLocation['alpha'] = 'bioreactor.culture.alpha'
+parLocation['beta'] = 'bioreactor.culture.beta'
+
+parLocation['G_in'] = 'feedtank.c_in[4]'
+parLocation['Gn_in'] = 'feedtank.c_in[5]'
+
+parLocation['t0'] = 'dosagescheme.table[1,1]'
+parLocation['F0'] = 'dosagescheme.table[1,2]'
+parLocation['t1'] = 'dosagescheme.table[2,1]'
+parLocation['F1'] = 'dosagescheme.table[2,2]'
+parLocation['t2'] = 'dosagescheme.table[3,1]'
+parLocation['F2'] = 'dosagescheme.table[3,2]'
+parLocation['t3'] = 'dosagescheme.table[4,1]'
+parLocation['F3'] = 'dosagescheme.table[4,2]'
+parLocation['t4'] = 'dosagescheme.table[5,1]'
+parLocation['F4'] = 'dosagescheme.table[5,2]'
+parLocation['t5'] = 'dosagescheme.table[6,1]'
+parLocation['F5'] = 'dosagescheme.table[6,2]'
+parLocation['t6'] = 'dosagescheme.table[7,1]'
+parLocation['F6'] = 'dosagescheme.table[7,2]'
 
 # Extra only for describe()
 keyVariables = []
@@ -155,6 +234,18 @@ parLocation['bioreactor.c[3]'] = 'bioreactor.c[3]'; keyVariables.append(parLocat
 
 # Parameter value check - especially for hysteresis to avoid runtime error
 parCheck = []
+parCheck.append("parValue['V_start'] > 0")
+parCheck.append("parValue['VXv_start'] >= 0")
+parCheck.append("parValue['VG_start'] >= 0")
+parCheck.append("parValue['VGn_start'] >= 0")
+parCheck.append("parValue['VL_start'] >= 0")
+parCheck.append("parValue['VN_start'] >= 0")
+parCheck.append("parValue['t0'] <= parValue['t1']")
+parCheck.append("parValue['t1'] <= parValue['t2']")
+parCheck.append("parValue['t2'] <= parValue['t3']")
+parCheck.append("parValue['t3'] <= parValue['t4']")
+parCheck.append("parValue['t4'] <= parValue['t5']")
+parCheck.append("parValue['t5'] <= parValue['t6']")
 
 # Create list of diagrams to be plotted by simu()
 diagrams = []
@@ -613,9 +704,10 @@ def readParValue(file, sheet, parValue=parValue):
    parValue.update(parValue_local)
 
 # Define how to read dictionary for parameter location
-def readParLocation(file, sheets, parLocation=parLocation):
+def readParLocation(file, parLocation=parLocation):
    """ Read parameter short and long names from an Excel-file sheet by sheet. For use in the notebook!
        Return a dictionary."""
+   sheets = ['initial_values','feed_AB', 'feed_G', 'culture', 'broth_decay']
    parLocation_local = {}
    for sheet in sheets:
       table = pd.ExcelFile(file).parse(sheet)
@@ -655,12 +747,14 @@ def model_get(parLoc, model_description=model_description):
 def model_get_variable_description(parLoc, model_description=model_description):
    """ Function corresponds to pyfmi model.get_variable_description() but returns just a value and not a list"""
    par_var = model_description.modelVariables
+#   value = [x[1] for x in [(par_var[k].name, par_var[k].description) for k in range(len(par_var))] if parLoc in x[0]]
    value = [x.description for x in par_var if parLoc in x.name]   
    return value[0]
    
 def model_get_variable_unit(parLoc, model_description=model_description):
    """ Function corresponds to pyfmi model.get_variable_unit() but returns just a value and not a list"""
    par_var = model_description.modelVariables
+#   value = [x[1] for x in [(par_var[k].name, par_var[k].unit) for k in range(len(par_var))] if parLoc in x[0]]
    value = [x.unit for x in par_var if parLoc in x.name]
    return value[0]
       
