@@ -51,7 +51,7 @@
 # 2025-11-08 - FMU-explore 1.0.2
 # 2025-11-13 - Test FMU-explore 1.0.1h and global declaration removed outside functions
 # 2025-11-14 - FMU-explore 1.0.2 corrected
-# 2025-11-19 - Adjusted to read excel-file and use of pandas
+# 2025-11-19 - FMU-explore 1.0.2 corrected again parLocation() with sheets as argument - use excel-sheet here
 #-------------------------------------------------------------------------------------------------------------------
 
 # Setup framework
