@@ -393,13 +393,10 @@ def newplot(title='Fedbatch cultivation',  plotType='TimeSeries'):
       diagrams.append("ax32.set_ylim(ax31.get_ylim())")      
 
       
-def describe(name, model, decimals=3):
+def describe(name, model=model, decimals=3):
    """Look up description of culture, media, as well as parameters and variables in the model code"""
 
-   if name == 'process':
-      model.get_description()
-
-   elif name == 'culture':
+   if name == 'culture':
       print('Reactor culture CHO-MAb - cell line HB-58 American Culture Collection ATCC') 
 
    elif name in ['broth', 'liquidphase', 'liquid-phase']:
@@ -454,7 +451,7 @@ def describe(name, model, decimals=3):
       describe_MSL()
 
    else:
-      describe_general(name, model, decimals)
+      describe_general(name, model=model, decimals)
 
 #------------------------------------------------------------------------------------------------------------------
 #  General code 
