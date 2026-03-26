@@ -863,8 +863,8 @@ def describe_general(name, decimals, parLocation=parLocation):
       print(description,'[',unit,']')
 
    elif name == 'process':
-      print(read_model_description(fmu_model).description)   
-      
+      print(read_model_description(fmu_model).description)  
+         
    elif name in parLocation.keys():
       description = model_get_variable_description(parLocation[name])
       value = model_get(parLocation[name])
