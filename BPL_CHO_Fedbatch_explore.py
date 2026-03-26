@@ -393,7 +393,7 @@ def newplot(title='Fedbatch cultivation',  plotType='TimeSeries'):
       diagrams.append("ax32.set_ylim(ax31.get_ylim())")      
 
       
-def describe(name, decimals=3):
+def describe(name, model, decimals=3):
    """Look up description of culture, media, as well as parameters and variables in the model code"""
 
    if name == 'process':
@@ -454,7 +454,7 @@ def describe(name, decimals=3):
       describe_MSL()
 
    else:
-      describe_general(name, decimals)
+      describe_general(name, model, decimals)
 
 #------------------------------------------------------------------------------------------------------------------
 #  General code 
@@ -693,7 +693,7 @@ def describe_MSL(flag_vendor=flag_vendor):
    print('MSL:', MSL_usage)
  
 # Describe parameters and variables in the Modelica code
-def describe_general(name, decimals, parLocation=parLocation):
+def describe_general(name, model, decimals, parLocation=parLocation):
   
    if name == 'time':
       description = 'Time'
