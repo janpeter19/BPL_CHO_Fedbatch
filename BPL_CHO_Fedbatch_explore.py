@@ -451,7 +451,7 @@ def describe(name, model=model, decimals=3):
       describe_MSL()
 
    else:
-      describe_general(name, model=model, decimals)
+      describe_general(name, decimals)
 
 #------------------------------------------------------------------------------------------------------------------
 #  General code 
@@ -690,7 +690,7 @@ def describe_MSL(flag_vendor=flag_vendor):
    print('MSL:', MSL_usage)
  
 # Describe parameters and variables in the Modelica code
-def describe_general(name, model, decimals, parLocation=parLocation):
+def describe_general(name, decimals, parLocation=parLocation):
   
    if name == 'time':
       description = 'Time'
