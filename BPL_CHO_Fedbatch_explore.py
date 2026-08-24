@@ -1,272 +1,132 @@
-# Figure - Simulation of CHO fedbatch reactor with well designed feed profile
-#          with functions added to facilitate explorative simulation work 
-#
+# setup application functions BPL_TEST2_Fedbatch, dependent on previous import of functions from fmu_explore 
 # Author: Jan Peter Axelsson
 #------------------------------------------------------------------------------------------------------------------
-# 2020-02-24 - Python3 script for Windows and Linux
-#            - Added system_info() that prints system information
-#            - Change newplot and simu using objectoriented diagrams 
-#            - Simplified handling of simulation results
-#            - Tested with JModelica 2.14 and seems ok
-#            - Introduced locale and setting of it - important for OpenModelica
-#            - Introduced check of platform to adapt code for Windows/Linux
-#            - Correct print() and np.nan
-#            - Adpated for Jupyter
-# 2020-02-28 - Corrected parSet() VX_0 should be VXv_0
-#------------------------------------------------------------------------------------------------------------------
-# 2020-06-18 - Adapted for BR5m
-#------------------------------------------------------------------------------------------------------------------
-# 2020-07-15 - Adapted for BP6a
-# 2020-07-18 - Eliminated use of get() before simulation to comply with FMU standard
-# 2020-07-27 - Introduce choice of Linux FMU - JModelica or OpenModelica
-# 2020-07-28 - Change of simu('cont') and handling of stateDict and model.get..
-# 2020-11-21 - Adapted to ReactorType with n_inlets, n_outlets and n_ports
-# 2021-02-05 - Adjust describe() for change to liquidphase
-#------------------------------------------------------------------------------------------------------------------
-# 2021-02-11 - Adapt for coming BPL_v2
-# 2021-02-16 - Adapt for further restructing in packages and later divide into files
-# 2021-03-20 - Adapt for BPL ver 2.0.3
-# 2021-04-15 - Adapt for Fedbatch2 with use of MSL CombiTimaTable
-# 2021-04-23 - Adapt for BPL ver 2.0.4
-# 2021-07-02 - Modify interaction to the current state - now application part small and general functions ok
-# 2021-08-05 - Introduced describe_parts() and corrected disp() to handle number of displayed decimals 
-# 2021-09-13 - Tested with BPL ver 2.0.7
-# 2021-10-02 - Updated system_info() with FMU-explore version
-# 2021-11-21 - Included bioreactor.broth_decay also after change of name
-# 2022-01-26 - Updated to FMU-explore 0.8.8
-# 2022-02-01 - Updated to FMU-explore 0.8.9
-# 2022-03-28 - Updated to FMU-explore 0.9.0 - model.reset(), and par(), init()
-# 2022-08-19 - Updated for BPL ver 2.1.0 beta and FMU-exolre 0.9.2
-# 2022-10-06 - Updated for FMU-explore 0.9.5 with disp() that do not include extra parameters with parLocation
-# 2023-02-15 - Consolidate FMU-explore to 0.9.6 and means parCheck and par() udpate and simu() with opts as arg
-# 2023-03-29 - Update FMU-explore 0.9.7
-# 2024-03-01 - Update FMU-explore 0.9.8 and 0.9.9 - now with _0 replaced with _start everywhere
-# 2024-10-16 - Update FMU-explore 1.0.0
-# 2024-11-04 - Removed GUI from process diagram
-# 2024-11-07 - Update BPL 2.3.0
-# 2025-02-20 - Try with CHO - extended with Xl i.e. lysed cells that bring toxicity
-# 2025-04-15 - Added describe('process') using model.get_description() and the show text string for the main model
-# 2025-06-12 - Test MSL 4.1.0 with OpenModelica genreated FMU
-# 2025-07-23 - Update BPL 2.3.1
-# 2025-11-08 - FMU-explore 1.0.2
-# 2025-11-13 - Test FMU-explore 1.0.1h and global declaration removed outside functions
-# 2025-11-14 - FMU-explore 1.0.2 corrected
-# 2025-11-19 - FMU-explore 1.0.2 corrected again parLocation() with sheets as argument - use excel-sheet here
-# 2026-03-26 - FMU-explore 1.0.3
-# 2026-04-13 - BPL 2.3.2
-#-------------------------------------------------------------------------------------------------------------------
-
-# Setup framework
-import sys
-import platform
-import locale
-import numpy as np 
-import matplotlib.pyplot as plt 
-import matplotlib.image as img
-import zipfile 
-import pandas as pd
- 
-from pyfmi import load_fmu
-from pyfmi.fmi import FMUException
-
-from itertools import cycle
-from importlib_metadata import version   # included in future Python 3.8
-
-# Set the environment - for Linux a JSON-file in the FMU is read
-if platform.system() == 'Linux': locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
-
-#------------------------------------------------------------------------------------------------------------------
-#  Setup application FMU
+# 2026-08-21 - Created
 #------------------------------------------------------------------------------------------------------------------
 
-# Provde the right FMU and load for different platforms in user dialogue:
-if platform.system() == 'Windows':
-   print('Windows - run FMU pre-compiled JModelica 2.14')
-   flag_vendor = 'JM'
-   flag_type = 'CS'
-   fmu_model ='BPL_CHO_Fedbatch_windows_jm_cs.fmu'        
-   model = load_fmu(fmu_model, log_level=0)  
-elif platform.system() == 'Linux':   
-   flag_vendor = 'OM'
-   flag_type = 'ME'
-   if flag_vendor in ['OM','om']:
-      print('Linux - run FMU pre-compiled OpenModelica') 
-      if flag_type in ['CS','cs']:         
-         fmu_model ='BPL_CHO_Fedbatch_linux_om_cs.fmu'    
-         model = load_fmu(fmu_model, log_level=0) 
-      if flag_type in ['ME','me']:         
-         fmu_model ='BPL_CHO_Fedbatch_linux_om_me.fmu'    
-         model = load_fmu(fmu_model, log_level=0)
-   else:    
-      print('There is no FMU for this platform')
-
-# Provide various opts-profiles
-if flag_type in ['CS', 'cs']:
-   opts_std = model.simulate_options()
-   opts_std['silent_mode'] = True
-   opts_std['ncp'] = 500 
-   opts_std['result_handling'] = 'binary'     
-elif flag_type in ['ME', 'me']:
-   opts_std = model.simulate_options()
-   opts_std["CVode_options"]["verbosity"] = 50 
-   opts_std['ncp'] = 500 
-   opts_std['result_handling'] = 'binary'  
-else:    
-   print('There is no FMU for this platform')
-  
-# Provide various MSL and BPL versions
-if flag_vendor in ['JM', 'jm']:
-   MSL_usage = model.get('MSL.usage')[0]
-   MSL_version = model.get('MSL.version')[0]
-   BPL_version = model.get('BPL.version')[0]
-elif flag_vendor in ['OM', 'om']:
-   MSL_usage = '4.1.0 - used components: RealInput, RealOutput. CombiTimeTable, Types' 
-   MSL_version = '4.1.0'
-   BPL_version = 'Bioprocess Library version 2.3.2' 
-else:    
-   print('There is no FMU for this platform')
-
-# Simulation time
-simulationTime = 120.0
-prevFinalTime = 0
-
-# Dictionary of time discrete states
-timeDiscreteStates = {} 
-
-# Define a minimal compoent list of the model as a starting point for describe('parts')
-component_list_minimum = ['bioreactor', 'bioreactor.culture', 'bioreactor.broth_decay']
-
-# Process diagram
-fmu_process_diagram ='BPL_CHO_Fedbatch_process_diagram_om.png'
-
 #------------------------------------------------------------------------------------------------------------------
-#  Specific application constructs: stateValue, parValue, parLocation, parCheck, diagrams, newplot(), describe()
+#  Specific application functions: newplot(), describe()
 #------------------------------------------------------------------------------------------------------------------
-   
-# Create stateValue that later will be used to store final state and used for initialization in 'cont':
-stateValue =  {}
-stateValue = model.get_states_list()
-stateValue.update(timeDiscreteStates)
-
-# Create parValue
-parValue = {}
-
-# Create dictionary of parameters full name - to get values in the notebook
-parLocation = {}
-
-
-# Extra only for describe()
-
-
-# Parameter value check - especially for hysteresis to avoid runtime error
-parCheck = []
-
-# Create list of diagrams to be plotted by simu()
-diagrams = []
 
 def newplot(title='Fedbatch cultivation',  plotType='TimeSeries'):
    """ Standard plot window,
         title = '' """
    
    # Reset pens
-   setLines()
+   resetPen()
    
-   # Globals
-   global ax11, ax12, ax13, ax21, ax22, ax23, ax31, ax32, ax33, ax41, ax42, ax43, ax51    
-    
    # Plot diagram 
    if plotType == 'TimeSeries':
 
-      plt.figure()
       ax11 = plt.subplot(4,2,1); ax12 = plt.subplot(4,2,2)
       ax21 = plt.subplot(4,2,3); ax22 = plt.subplot(4,2,4)
       ax31 = plt.subplot(4,2,5); ax32 = plt.subplot(4,2,6)
-      ax41 = plt.subplot(4,2,7); ax42 = plt.subplot(4,2,8)    
+      ax41 = plt.subplot(4,2,7); ax42 = plt.subplot(4,2,8)
+      
+      ax.clear()
+      ax.append(ax11)
+      ax.append(ax12)
+      ax.append(ax21)
+      ax.append(ax22) 
+      ax.append(ax31)
+      ax.append(ax32)
+      ax.append(ax41)
+      ax.append(ax42)           
+        
+      ax[0].set_title(title)
+      ax[0].grid()
+      ax[0].set_ylabel('Glucose conc [mM]')
 
-      ax11.set_title(title)
-      ax11.grid()
-      ax11.set_ylabel('Glucose conc [mM]')
+      ax[1].grid()
+      ax[1].set_ylabel('Lactate conc [mM]')
 
-      ax12.grid()
-      ax12.set_ylabel('Lactate conc [mM]')
+      ax[2].grid()
+      ax[2].set_ylabel('Glutamine conc [mM]')
 
-      ax21.grid()
-      ax21.set_ylabel('Glutamine conc [mM]')
+      ax[3].grid()
+      ax[3].set_ylabel('Ammonia conc [mM]')
 
-      ax22.grid()
-      ax22.set_ylabel('Ammonia conc [mM]')
+      ax[4].grid()
+      ax[4].set_ylabel('Viable cells conc [1E6/mL]')
 
-      ax31.grid()
-      ax31.set_ylabel('Viable cells conc [1E6/mL]')
+      ax[5].grid()
+      ax[5].set_ylabel('Dead cells conc [1E6/mL]')
 
-      ax32.grid()
-      ax32.set_ylabel('Dead cells conc [1E6/mL]')
+      ax[6].grid()
+      ax[6].set_ylabel('Feed rate [L/h]')
+      ax[6].set_xlabel('Time [h]')
 
-      ax41.grid()
-      ax41.set_ylabel('Feed rate [L/h]')
-      ax41.set_xlabel('Time [h]')
-
-      ax42.grid()
-      ax42.set_ylabel('Volume [L]')
-      ax42.set_xlabel('Time [h]')
+      ax[7].grid()
+      ax[7].set_ylabel('Volume [L]')
+      ax[7].set_xlabel('Time [h]')
 
       # List of commands to be executed by simu() after a simulation  
       diagrams.clear()
-      diagrams.append("ax11.plot(t,sim_res['bioreactor.c[4]'], color='b', linestyle=linetype)")       
-      diagrams.append("ax12.plot(t,sim_res['bioreactor.c[6]'], color='r', linestyle=linetype)")       
-      diagrams.append("ax21.plot(t,sim_res['bioreactor.c[5]'], color='b', linestyle=linetype)")       
-      diagrams.append("ax22.plot(t,sim_res['bioreactor.c[7]'], color='r', linestyle=linetype)")       
-      diagrams.append("ax31.plot(t,sim_res['bioreactor.c[1]'], color='b', linestyle=linetype)")       
-      diagrams.append("ax32.plot(t,sim_res['bioreactor.c[2]'], color='r', linestyle=linetype)")        
-      diagrams.append("ax41.plot(t,sim_res['bioreactor.inlet[1].F'], color='b', linestyle=linetype)")       
-      diagrams.append("ax42.plot(t,sim_res['bioreactor.V'], color='b', linestyle=linetype)") 
+      diagrams.append("ax[0].plot(t,sim_res['bioreactor.c[4]'], color='b', linestyle=linetype)")       
+      diagrams.append("ax[1].plot(t,sim_res['bioreactor.c[6]'], color='r', linestyle=linetype)")       
+      diagrams.append("ax[2].plot(t,sim_res['bioreactor.c[5]'], color='b', linestyle=linetype)")       
+      diagrams.append("ax[3].plot(t,sim_res['bioreactor.c[7]'], color='r', linestyle=linetype)")       
+      diagrams.append("ax[4].plot(t,sim_res['bioreactor.c[1]'], color='b', linestyle=linetype)")       
+      diagrams.append("ax[5].plot(t,sim_res['bioreactor.c[2]'], color='r', linestyle=linetype)")        
+      diagrams.append("ax[6].plot(t,sim_res['bioreactor.inlet[1].F'], color='b', linestyle=linetype)")       
+      diagrams.append("ax[7].plot(t,sim_res['bioreactor.V'], color='b', linestyle=linetype)") 
    
    if plotType == 'TimeSeries1':
 
       plt.figure()
-      ax11 = plt.subplot(4,2,1); ax12 = plt.subplot(4,2,2)
+      ax11 = plt.subplot(4,2,1); ax[1] = plt.subplot(4,2,2)
       ax21 = plt.subplot(4,2,3); ax22 = plt.subplot(4,2,4)
       ax31 = plt.subplot(4,2,5); ax32 = plt.subplot(4,2,6)
-      ax41 = plt.subplot(4,2,7); ax42 = plt.subplot(4,2,8)    
+      ax41 = plt.subplot(4,2,7); ax42 = plt.subplot(4,2,8)  
 
-      ax11.set_title(title)
-      ax11.grid()
-      ax11.set_ylabel('Glucose conc [mM]')
+      ax.clear()
+      ax.append(ax11)
+      ax.append(ax12)
+      ax.append(ax21)
+      ax.append(ax22) 
+      ax.append(ax31)
+      ax.append(ax32)
+      ax.append(ax41)
+      ax.append(ax42)       
 
-      ax12.grid()
-      ax12.set_ylabel('Lactate conc [mM]')
+      ax[0].set_title(title)
+      ax[0].grid()
+      ax[0].set_ylabel('Glucose conc [mM]')
 
-      ax21.grid()
-      ax21.set_ylabel('Glutamine conc [mM]')
+      ax[1].grid()
+      ax[1].set_ylabel('Lactate conc [mM]')
 
-      ax22.grid()
-      ax22.set_ylabel('Ammonia conc [mM]')
+      ax[2].grid()
+      ax[2].set_ylabel('Glutamine conc [mM]')
 
-      ax31.grid()
-      ax31.set_ylabel('Viable cells conc [1E6/mL]')
+      ax[3].grid()
+      ax[3].set_ylabel('Ammonia conc [mM]')
 
-      ax32.grid()
-      ax32.set_ylabel('Dead and lysed cells [1E6/mL]')
+      ax[4].grid()
+      ax[4].set_ylabel('Viable cells conc [1E6/mL]')
 
-      ax41.grid()
-      ax41.set_ylabel('Feed rate [L/h]')
-      ax41.set_xlabel('Time [h]')
+      ax[5].grid()
+      ax[5].set_ylabel('Dead and lysed cells [1E6/mL]')
 
-      ax42.grid()
-      ax42.set_ylabel('Volume [L]')
-      ax42.set_xlabel('Time [h]')
+      ax[6].grid()
+      ax[6].set_ylabel('Feed rate [L/h]')
+      ax[6].set_xlabel('Time [h]')
+
+      ax[7].grid()
+      ax[7].set_ylabel('Volume [L]')
+      ax[7].set_xlabel('Time [h]')
 
       # List of commands to be executed by simu() after a simulation  
       diagrams.clear()
-      diagrams.append("ax11.plot(t,sim_res['bioreactor.c[4]'], color='b', linestyle=linetype)")       
-      diagrams.append("ax12.plot(t,sim_res['bioreactor.c[6]'], color='r', linestyle=linetype)")       
-      diagrams.append("ax21.plot(t,sim_res['bioreactor.c[5]'], color='b', linestyle=linetype)")       
-      diagrams.append("ax22.plot(t,sim_res['bioreactor.c[7]'], color='r', linestyle=linetype)")       
-      diagrams.append("ax31.plot(t,sim_res['bioreactor.c[1]'], color='b', linestyle=linetype)")       
-      diagrams.append("ax32.plot(t,sim_res['bioreactor.c[2]'], color='r', linestyle=linetype)")  
-      diagrams.append("ax32.plot(t,sim_res['bioreactor.c[3]'], color='k', linestyle=linetype)")       
-      diagrams.append("ax41.plot(t,sim_res['bioreactor.inlet[1].F'], color='b', linestyle=linetype)")       
-      diagrams.append("ax42.plot(t,sim_res['bioreactor.V'], color='b', linestyle=linetype)") 
+      diagrams.append("ax[0].plot(t,sim_res['bioreactor.c[4]'], color='b', linestyle=linetype)")       
+      diagrams.append("ax[1].plot(t,sim_res['bioreactor.c[6]'], color='r', linestyle=linetype)")       
+      diagrams.append("ax[2].plot(t,sim_res['bioreactor.c[5]'], color='b', linestyle=linetype)")       
+      diagrams.append("ax[3].plot(t,sim_res['bioreactor.c[7]'], color='r', linestyle=linetype)")       
+      diagrams.append("ax[4].plot(t,sim_res['bioreactor.c[1]'], color='b', linestyle=linetype)")       
+      diagrams.append("ax[5].plot(t,sim_res['bioreactor.c[2]'], color='r', linestyle=linetype)")  
+      diagrams.append("ax[5].plot(t,sim_res['bioreactor.c[3]'], color='k', linestyle=linetype)")       
+      diagrams.append("ax[6].plot(t,sim_res['bioreactor.inlet[1].F'], color='b', linestyle=linetype)")       
+      diagrams.append("ax[7].plot(t,sim_res['bioreactor.V'], color='b', linestyle=linetype)") 
 
     
    # Plot diagram 
@@ -276,46 +136,56 @@ def newplot(title='Fedbatch cultivation',  plotType='TimeSeries'):
       ax11 = plt.subplot(4,2,1); ax12 = plt.subplot(4,2,2)
       ax21 = plt.subplot(4,2,3); ax22 = plt.subplot(4,2,4)
       ax31 = plt.subplot(4,2,5); ax32 = plt.subplot(4,2,6)
-      ax41 = plt.subplot(4,2,7); ax42 = plt.subplot(4,2,8)    
+      ax41 = plt.subplot(4,2,7); ax42 = plt.subplot(4,2,8) 
 
-      ax11.set_title(title)
-      ax11.grid()
-      ax11.set_ylabel('Glucose conc [mM]')
+      ax.clear()
+      ax.append(ax11)
+      ax.append(ax12)
+      ax.append(ax21)
+      ax.append(ax22) 
+      ax.append(ax31)
+      ax.append(ax32)
+      ax.append(ax41)
+      ax.append(ax42)        
 
-      ax12.grid()
-      ax12.set_ylabel('Lactate conc [mM]')
+      ax[0].set_title(title)
+      ax[0].grid()
+      ax[0].set_ylabel('Glucose conc [mM]')
 
-      ax21.grid()
-      ax21.set_ylabel('Glutamine conc [mM]')
+      ax[1].grid()
+      ax[1].set_ylabel('Lactate conc [mM]')
 
-      ax22.grid()
-      ax22.set_ylabel('Ammonia conc [mM]')
+      ax[2].grid()
+      ax[2].set_ylabel('Glutamine conc [mM]')
 
-      ax31.grid()
-      ax31.set_ylabel('Viable cells [1E6]')
+      ax[3].grid()
+      ax[3].set_ylabel('Ammonia conc [mM]')
 
-      ax32.grid()
-      ax32.set_ylabel('Dead and lysed cells [1E6/mL]')
+      ax[4].grid()
+      ax[4].set_ylabel('Viable cells [1E6]')
 
-      ax41.grid()
-      ax41.set_ylabel('Feed rate [L/h]')
-      ax41.set_xlabel('Time [h]')
+      ax[5].grid()
+      ax[5].set_ylabel('Dead and lysed cells [1E6/mL]')
 
-      ax42.grid()
-      ax42.set_ylabel('Volume [L]')
-      ax42.set_xlabel('Time [h]')
+      ax[6].grid()
+      ax[6].set_ylabel('Feed rate [L/h]')
+      ax[6].set_xlabel('Time [h]')
+
+      ax[7].grid()
+      ax[7].set_ylabel('Volume [L]')
+      ax[7].set_xlabel('Time [h]')
 
       # List of commands to be executed by simu() after a simulation  
       diagrams.clear()
-      diagrams.append("ax11.plot(t,sim_res['bioreactor.c[4]'], color='b', linestyle=linetype)")       
-      diagrams.append("ax12.plot(t,sim_res['bioreactor.c[6]'], color='r', linestyle=linetype)")       
-      diagrams.append("ax21.plot(t,sim_res['bioreactor.c[5]'], color='b', linestyle=linetype)")       
-      diagrams.append("ax22.plot(t,sim_res['bioreactor.c[7]'], color='r', linestyle=linetype)")       
-      diagrams.append("ax31.plot(t,sim_res['bioreactor.m[1]'], color='b', linestyle=linetype)")       
-      diagrams.append("ax32.plot(t,sim_res['bioreactor.c[2]'], color='r', linestyle=linetype)")  
-      diagrams.append("ax32.plot(t,sim_res['bioreactor.c[3]'], color='k', linestyle=linetype)")       
-      diagrams.append("ax41.plot(t,sim_res['bioreactor.inlet[1].F'], color='b', linestyle=linetype)")       
-      diagrams.append("ax42.plot(t,sim_res['bioreactor.V'], color='b', linestyle=linetype)") 
+      diagrams.append("ax[0].plot(t,sim_res['bioreactor.c[4]'], color='b', linestyle=linetype)")       
+      diagrams.append("ax[1].plot(t,sim_res['bioreactor.c[6]'], color='r', linestyle=linetype)")       
+      diagrams.append("ax[2].plot(t,sim_res['bioreactor.c[5]'], color='b', linestyle=linetype)")       
+      diagrams.append("ax[3].plot(t,sim_res['bioreactor.c[7]'], color='r', linestyle=linetype)")       
+      diagrams.append("ax[4].plot(t,sim_res['bioreactor.m[1]'], color='b', linestyle=linetype)")       
+      diagrams.append("ax[5].plot(t,sim_res['bioreactor.c[2]'], color='r', linestyle=linetype)")  
+      diagrams.append("ax[5].plot(t,sim_res['bioreactor.c[3]'], color='k', linestyle=linetype)")       
+      diagrams.append("ax[6].plot(t,sim_res['bioreactor.inlet[1].F'], color='b', linestyle=linetype)")       
+      diagrams.append("ax[7].plot(t,sim_res['bioreactor.V'], color='b', linestyle=linetype)") 
       
    if plotType == 'Textbook_3':
  
@@ -326,72 +196,87 @@ def newplot(title='Fedbatch cultivation',  plotType='TimeSeries'):
       ax41 = plt.subplot(5,3,10); ax42 = plt.subplot(5,3,11); ax43 = plt.subplot(5,3,12)
       ax51 = plt.subplot(5,3,13) 
 
-      ax11.set_title(title)
-      ax11.grid()
-      ax11.set_ylabel('Glucose [mM]')
+      ax.clear()
+      ax.append(ax11) # 0  
+      ax.append(ax12) # 1 
+      ax.append(ax13) # 2
+      ax.append(ax21) # 3
+      ax.append(ax22) # 4
+      ax.append(ax23) # 5
+      ax.append(ax31) # 6
+      ax.append(ax32) # 7      
+      ax.append(ax33) # 8
+      ax.append(ax41) # 9            
+      ax.append(ax42) #10  
+      ax.append(ax43) #11  
+      ax.append(ax51) #12  
 
-      ax12.grid()
-      ax12.set_ylabel('Lactate [mM]')
+      ax[0].set_title(title)
+      ax[0].grid()
+      ax[0].set_ylabel('Glucose [mM]')
+
+      ax[1].grid()
+      ax[1].set_ylabel('Lactate [mM]')
       
-      ax13.grid()
-      ax13.set_ylabel('qG []')
+      ax[2].grid()
+      ax[2].set_ylabel('qG []')
 
-      ax21.grid()
-      ax21.set_ylabel('Glutamine [mM]')
+      ax[3].grid()
+      ax[3].set_ylabel('Glutamine [mM]')
 
-      ax22.grid()
-      ax22.set_ylabel('Ammonia [mM]')
+      ax[4].grid()
+      ax[4].set_ylabel('Ammonia [mM]')
       
-      ax23.grid()
-      ax23.set_ylabel('qGn []')
+      ax[5].grid()
+      ax[5].set_ylabel('qGn []')
 
-      ax31.grid()
-      ax31.set_ylabel('Viable cell [1E6/mL]')
+      ax[6].grid()
+      ax[6].set_ylabel('Viable cell [1E6/mL]')
 
-      ax32.grid()
-      ax32.set_ylabel('Dead cell conc [1E6/mL]')
-      ax32.set_xlabel('Time [h]')
+      ax[7].grid()
+      ax[7].set_ylabel('Dead cell conc [1E6/mL]')
+      ax[7].set_xlabel('Time [h]')
       
-      ax33.grid()
-      ax33.set_ylabel('mu [1/h]')
-      ax33.set_xlabel('Time [h]')
+      ax[8].grid()
+      ax[8].set_ylabel('mu [1/h]')
+      ax[8].set_xlabel('Time [h]')
 
-      ax41.grid()
-      ax41.set_ylabel('Feed rate [L/h]')
+      ax[9].grid()
+      ax[9].set_ylabel('Feed rate [L/h]')
 
-      ax42.grid()
-      ax42.set_ylabel('mAb []')
+      ax[10].grid()
+      ax[10].set_ylabel('mAb []')
 
-      ax43.grid()
-      ax43.set_ylabel('qP []')
+      ax[11].grid()
+      ax[11].set_ylabel('qP []')
 
-      ax51.grid()
-      ax51.set_ylabel('Volume [L]')      
-      ax51.set_xlabel('Time [h]')
+      ax[12].grid()
+      ax[12].set_ylabel('Volume [L]')      
+      ax[12].set_xlabel('Time [h]')
       
       # List of commands to be executed by simu() after a simulation  
       diagrams.clear()
-      diagrams.append("ax11.plot(t,sim_res['bioreactor.c[4]'], color='b', linestyle=linetype)")       
-      diagrams.append("ax12.plot(t,sim_res['bioreactor.c[6]'], color='r', linestyle=linetype)")       
-      diagrams.append("ax21.plot(t,sim_res['bioreactor.c[5]'], color='b', linestyle=linetype)")       
-      diagrams.append("ax22.plot(t,sim_res['bioreactor.c[7]'], color='r', linestyle=linetype)")       
-      diagrams.append("ax31.plot(t,sim_res['bioreactor.c[1]'], color='b', linestyle=linetype)")       
-      diagrams.append("ax32.plot(t,sim_res['bioreactor.c[2]'], color='r', linestyle=linetype)")       
-      diagrams.append("ax41.plot(t,sim_res['bioreactor.inlet[1].F'], color='b', linestyle=linetype)") 
-      diagrams.append("ax42.plot(t,sim_res['bioreactor.c[8]'], color='g', linestyle=linetype)")       
-      diagrams.append("ax51.plot(t,sim_res['bioreactor.V'], color='b', linestyle=linetype)") 
+      diagrams.append("ax[0].plot(t,sim_res['bioreactor.c[4]'], color='b', linestyle=linetype)")       
+      diagrams.append("ax[1].plot(t,sim_res['bioreactor.c[6]'], color='r', linestyle=linetype)")       
+      diagrams.append("ax[3].plot(t,sim_res['bioreactor.c[5]'], color='b', linestyle=linetype)")       
+      diagrams.append("ax[4].plot(t,sim_res['bioreactor.c[7]'], color='r', linestyle=linetype)")       
+      diagrams.append("ax[6].plot(t,sim_res['bioreactor.c[1]'], color='b', linestyle=linetype)")       
+      diagrams.append("ax[7].plot(t,sim_res['bioreactor.c[2]'], color='r', linestyle=linetype)")       
+      diagrams.append("ax[9].plot(t,sim_res['bioreactor.inlet[1].F'], color='b', linestyle=linetype)") 
+      diagrams.append("ax[10].plot(t,sim_res['bioreactor.c[8]'], color='g', linestyle=linetype)")       
+      diagrams.append("ax[12].plot(t,sim_res['bioreactor.V'], color='b', linestyle=linetype)") 
 
-      diagrams.append("ax13.set_title('- cell specific rates')") 
-      diagrams.append("ax13.plot(t,-(sim_res['bioreactor.culture.q[4]']+sim_res['bioreactor.culture.qG_over']), color='r', linestyle=linetype)") 
-      diagrams.append("ax13.plot(t,-sim_res['bioreactor.culture.q[4]'], color='b', linestyle=linetype)") 
-      diagrams.append("ax23.plot(t,-(sim_res['bioreactor.culture.q[5]']+sim_res['bioreactor.culture.qGn_over']), color='r', linestyle=linetype)") 
-      diagrams.append("ax23.plot(t,-sim_res['bioreactor.culture.q[5]'], color='b', linestyle=linetype)") 
-      diagrams.append("ax33.plot(t,sim_res['bioreactor.culture.q[1]'], color='b', linestyle=linetype)") 
-      diagrams.append("ax43.plot(t,sim_res['bioreactor.culture.q[8]'], color='g', linestyle=linetype)") 
+      diagrams.append("ax[2].set_title('- cell specific rates')") 
+      diagrams.append("ax[2].plot(t,-(sim_res['bioreactor.culture.q[4]']+sim_res['bioreactor.culture.qG_over']), color='r', linestyle=linetype)") 
+      diagrams.append("ax[2].plot(t,-sim_res['bioreactor.culture.q[4]'], color='b', linestyle=linetype)") 
+      diagrams.append("ax[5].plot(t,-(sim_res['bioreactor.culture.q[5]']+sim_res['bioreactor.culture.qGn_over']), color='r', linestyle=linetype)") 
+      diagrams.append("ax[5].plot(t,-sim_res['bioreactor.culture.q[5]'], color='b', linestyle=linetype)") 
+      diagrams.append("ax[8].plot(t,sim_res['bioreactor.culture.q[1]'], color='b', linestyle=linetype)") 
+      diagrams.append("ax[11].plot(t,sim_res['bioreactor.culture.q[8]'], color='g', linestyle=linetype)") 
       
-      diagrams.append("ax11.set_ylim(0)")
-      diagrams.append("ax13.set_ylim(0)")
-      diagrams.append("ax32.set_ylim(ax31.get_ylim())")      
+      diagrams.append("ax[0].set_ylim(0)")
+      diagrams.append("ax[2].set_ylim(0)")
+      diagrams.append("ax[7].set_ylim(ax[6].get_ylim())")      
 
       
 def describe(name, model=model, decimals=3):
@@ -453,347 +338,9 @@ def describe(name, model=model, decimals=3):
 
    else:
       describe_general(name, decimals)
-
-#------------------------------------------------------------------------------------------------------------------
-#  General code 
-FMU_explore = 'FMU-explore version 1.0.3'
-#------------------------------------------------------------------------------------------------------------------
-
-# Define function par() for parameter update
-def par(*x, parValue=parValue, **x_kwarg):
-   """ Set parameter values if available in the predefined dictionaryt parValue. """
-   x_kwarg.update(*x)
-   x_temp = {}
-   for key in x_kwarg.keys():
-      if key in parValue.keys():
-         x_temp.update({key: x_kwarg[key]})
-      else:
-         print('Error:', key, '- seems not an accessible parameter - check the spelling')
-   parValue.update(x_temp)
-   
-   parErrors = [requirement for requirement in parCheck if not(eval(requirement))]
-   if not parErrors == []:
-      print('Error - the following requirements do not hold:')
-      for index, item in enumerate(parErrors): print(item)
-
-# Define function init() for initial values update
-def init(*x, parValue=parValue, **x_kwarg):
-   """ Set initial values and the name should contain string '_start' to be accepted.
-       The function can handle general parameter string location names if entered as a dictionary. """
-   x_kwarg.update(*x)
-   x_init={}
-   for key in x_kwarg.keys():
-      if '_start' in key: 
-         x_init.update({key: x_kwarg[key]})
-      else:
-         print('Error:', key, '- seems not an initial value, use par() instead - check the spelling')
-   parValue.update(x_init)
-
-# Define how to read dictionary for parameter values
-def readParValue(file, sheet, parValue=parValue):
-   """ Read parameter short names and values from an Excel-file from defined sheet. For use in the notebook!
-       Return a dictionary."""
-   parValue_local = {} 
-   table = pd.ExcelFile(file).parse(sheet)
-   for k in list(range(len(table))):
-      parValue_local[table['Par'][k]] = table['Value'][k]
-   parValue.update(parValue_local)
-
-# Define how to read dictionary for parameter location
-def readParLocation(file, sheets, parLocation=parLocation):
-   """ Read parameter short and long names from an Excel-file sheet by sheet. For use in the notebook!
-       Return a dictionary."""
-   parLocation_local = {}
-   for sheet in sheets:
-      table = pd.ExcelFile(file).parse(sheet)
-      for k in list(range(len(table))):
-         parLocation_local[table['Par'][k]] = table['Location'][k]
-   parLocation.update(parLocation_local)
-      
-def disp(name='', decimals=3, mode='short', parValue=parValue, parLocation=parLocation):
-   """ Display intial values and parameters in the model that include "name" and is in parLocation list.
-       Note, it does not take the value from the dictionary par but from the model. """
-   global model
-
-   def dict_reverser(d):
-      seen = set()
-      return {v: k for k, v in d.items() if v not in seen or seen.add(v)}
-   
-   if mode in ['short']:
-      k = 0
-      for Location in [parLocation[k] for k in parValue.keys()]:
-         if name in Location:
-            if type(model.get(Location)[0]) != np.bool_:
-               print(dict_reverser(parLocation)[Location] , ':', np.round(model.get(Location)[0],decimals))
-            else:
-               print(dict_reverser(parLocation)[Location] , ':', model.get(Location)[0])               
-         else:
-            k = k+1
-      if k == len(parLocation):
-         for parName in parValue.keys():
-            if name in parName:
-               if type(model.get(Location)[0]) != np.bool_:
-                  print(parName,':', np.round(model.get(parLocation[parName])[0],decimals))
-               else: 
-                  print(parName,':', model.get(parLocation[parName])[0])
-   if mode in ['long','location']:
-      k = 0
-      for Location in [parLocation[k] for k in parValue.keys()]:
-         if name in Location:
-            if type(model.get(Location)[0]) != np.bool_:       
-               print(Location,':', dict_reverser(parLocation)[Location] , ':', np.round(model.get(Location)[0],decimals))
-         else:
-            k = k+1
-      if k == len(parLocation):
-         for parName in parValue.keys():
-            if name in parName:
-               if type(model.get(Location)[0]) != np.bool_:
-                  print(parLocation[parName], ':', dict_reverser(parLocation)[Location], ':', parName,':', 
-                     np.round(model.get(parLocation[parName])[0],decimals))
-
-# Line types
-def setLines(lines=['-','--',':','-.']):
-   """Set list of linetypes used in plots"""
-   global linecycler
-   linecycler = cycle(lines)
-
-# Show plots from sim_res, just that
-def show(diagrams=diagrams):
-   """Show diagrams chosen by newplot()"""
-   # Plot pen
-   linetype = next(linecycler)    
-   # Plot diagrams 
-   for command in diagrams: eval(command)
-
-# Simulation
-def simu(simulationTimeLocal=simulationTime, mode='Initial', options=opts_std, \
-         diagrams=diagrams,timeDiscreteStates=timeDiscreteStates, stateValue=stateValue, \
-         parValue=parValue, parLocation=parLocation, fmu_model=fmu_model):         
-   """Model loaded and given intial values and parameter before,
-      and plot window also setup before."""
-    
-   # Global variables
-   global model, prevFinalTime, sim_res, t
-   
-   # Simulation flag
-   simulationDone = False
-   
-   # Transfer of argument to global variable
-   simulationTime = simulationTimeLocal 
-      
-   # Check parValue
-   value_missing = 0
-   for key in parValue.keys():
-      if parValue[key] in [np.nan, None, '']:
-         print('Value missing:', key)
-         value_missing =+1
-   if value_missing>0: return
-         
-   # Load model
-   if model is None:
-      model = load_fmu(fmu_model) 
-   model.reset()
-      
-   # Run simulation
-   if mode in ['Initial', 'initial', 'init']:
-      # Set parameters and intial state values:
-      for key in parValue.keys():
-         model.set(parLocation[key],parValue[key])   
-      # Simulate
-      sim_res = model.simulate(final_time=simulationTime, options=options)  
-      simulationDone = True
-   elif mode in ['Continued', 'continued', 'cont']:
-
-      if prevFinalTime == 0: 
-         print("Error: Simulation is first done with default mode = init'")      
-      else:
-         
-         # Set parameters and intial state values:
-         for key in parValue.keys():
-            model.set(parLocation[key],parValue[key])                
-
-         for key in stateValue.keys():
-            if not key[-1] == ']':
-               if key[-3:] == 'I.y': 
-                  model.set(key[:-10]+'I_start', stateValue[key]) 
-               elif key[-3:] == 'D.x': 
-                  model.set(key[:-10]+'D_start', stateValue[key]) 
-               else:
-                  model.set(key+'_start', stateValue[key])
-            elif key[-3] == '[':
-               model.set(key[:-3]+'_start'+key[-3:], stateValue[key]) 
-            elif key[-4] == '[':
-               model.set(key[:-4]+'_start'+key[-4:], stateValue[key]) 
-            elif key[-5] == '[':
-               model.set(key[:-5]+'_start'+key[-5:], stateValue[key]) 
-            else:
-               print('The state vecotr has more than 1000 states')
-               break
-
-         # Simulate
-         sim_res = model.simulate(start_time=prevFinalTime,
-                                 final_time=prevFinalTime + simulationTime,
-                                 options=options) 
-         simulationDone = True             
-   else:
-      print("Simulation mode not correct")
-
-   if simulationDone:
-    
-      # Extract data
-      t = sim_res['time']
  
-      # Plot diagrams
-      linetype = next(linecycler)    
-      for command in diagrams: eval(command)
-            
-      # Store final state values stateValue:
-      for key in list(stateValue.keys()): stateValue[key] = model.get(key)[0]        
-
-      # Store time from where simulation will start next time
-      prevFinalTime = model.time
-   
-   else:
-      print('Error: No simulation done')
-      
-# Describe model parts of the combined system
-def describe_parts(component_list=[]):
-   """List all parts of the model""" 
-       
-   def model_component(variable_name):
-      i = 0
-      name = ''
-      finished = False
-      if not variable_name[0] == '_':
-         while not finished:
-            name = name + variable_name[i]
-            if i == len(variable_name)-1:
-                finished = True 
-            elif variable_name[i+1] in ['.', '(']: 
-                finished = True
-            else: 
-                i=i+1
-      if name in ['der', 'temp_1', 'temp_2', 'temp_3', 'temp_4', 'temp_5', 'temp_6', 'temp_7']: name = ''
-      return name
-    
-   variables = list(model.get_model_variables().keys())
-        
-   for i in range(len(variables)):
-      component = model_component(variables[i])
-      if (component not in component_list) \
-      & (component not in ['','BPL', 'Customer', 'today[1]', 'today[2]', 'today[3]', 'temp_2', 'temp_3']):
-         component_list.append(component)
-      
-   print(sorted(component_list, key=str.casefold))
-   
-def describe_MSL(flag_vendor=flag_vendor):
-   """List MSL version and components used"""
-   print('MSL:', MSL_usage)
- 
-# Describe parameters and variables in the Modelica code
-def describe_general(name, decimals, parLocation=parLocation):
-  
-   if name == 'time':
-      description = 'Time'
-      unit = 'h'
-      print(description,'[',unit,']')
-      
-   elif name == 'process':
-      print(model.get_description())    
-      
-   elif name in parLocation.keys():
-      description = model.get_variable_description(parLocation[name])
-      value = model.get(parLocation[name])[0]
-      try:
-         unit = model.get_variable_unit(parLocation[name])
-      except FMUException:
-         unit =''
-      if unit =='':
-         if type(value) != np.bool_:
-            print(description, ':', np.round(value, decimals))
-         else:
-            print(description, ':', value)            
-      else:
-        print(description, ':', np.round(value, decimals), '[',unit,']')
-                  
-   else:
-      description = model.get_variable_description(name)
-      value = model.get(name)[0]
-      try:
-         unit = model.get_variable_unit(name)
-      except FMUException:
-         unit =''
-      if unit =='':
-         if type(value) != np.bool_:
-            print(description, ':', np.round(value, decimals))
-         else:
-            print(description, ':', value)     
-      else:
-         print(description, ':', np.round(value, decimals), '[',unit,']')
-         
-# Plot process diagram
-def process_diagram(fmu_model=fmu_model, fmu_process_diagram=fmu_process_diagram):   
-   try:
-       process_diagram = zipfile.ZipFile(fmu_model, 'r').open('documentation/processDiagram.png')
-   except KeyError:
-       print('No processDiagram.png file in the FMU, but try the file on disk.')
-       process_diagram = fmu_process_diagram
-   try:
-       plt.imshow(img.imread(process_diagram))
-       plt.axis('off')
-       plt.show()
-   except FileNotFoundError:
-       print('And no such file on disk either')
-         
-# Describe framework
-def BPL_info():
-   print()
-   print('Model for the process has been setup. Key commands:')
-   print(' - par()       - change of parameters and initial values')
-   print(' - init()      - change initial values only')
-   print(' - simu()      - simulate and plot')
-   print(' - newplot()   - make a new plot')
-   print(' - show()      - show plot from previous simulation')
-   print(' - disp()      - display parameters and initial values from the last simulation')
-   print(' - describe()  - describe culture, broth, parameters, variables with values/units')
-   print()
-   print('Note that both disp() and describe() takes values from the last simulation')
-   print('and the command process_diagram() brings up the main configuration')
-   print()
-   print('Brief information about a command by help(), eg help(simu)') 
-   print('Key system information is listed with the command system_info()')
-
-def system_info():
-   """Print system information"""
-   FMU_type = model.__class__.__name__
-   print()
-   print('System information')
-   print(' -OS:', platform.system())
-   print(' -Python:', platform.python_version())
-   try:
-       scipy_ver = scipy.__version__
-       print(' -Scipy:',scipy_ver)
-   except NameError:
-       print(' -Scipy: not installed in the notebook')
-   print(' -PyFMI:', version('pyfmi'))
-   print(' -FMU by:', model.get_generation_tool())
-   print(' -FMI:', model.get_version())
-   print(' -Type:', FMU_type)
-   print(' -Name:', model.get_name())
-   print(' -Generated:', model.get_generation_date_and_time())
-   print(' -MSL:', MSL_version)    
-   print(' -Description:', BPL_version)   
-   print(' -Interaction:', FMU_explore)
-   
-def SDG(explanation=False):
-  if explanation:
-    print('"Soli Deo Gloria"')
-    print(' It is latin and means "To the honour of God".') 
-    print(' The great composer Johan Sebastian Bach used to end his compositions with this small remark SDG.')
-    print(' And I like to do that too :).')    
-    
 #------------------------------------------------------------------------------------------------------------------
 #  Startup
 #------------------------------------------------------------------------------------------------------------------
 
-BPL_info()
+FMU_explore_info()
