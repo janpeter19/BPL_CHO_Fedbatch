@@ -1,4 +1,4 @@
-# setup application functions BPL_TEST2_Fedbatch, dependent on previous import of functions from fmu_explore 
+# setup application functions BPL_CHO_Fedbatch, dependent on previous import of functions from fmu_explore 
 # Author: Jan Peter Axelsson
 #------------------------------------------------------------------------------------------------------------------
 # 2026-08-21 - Created
