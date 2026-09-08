@@ -189,7 +189,6 @@ def newplot(title='Fedbatch cultivation',  plotType='TimeSeries'):
       
    if plotType == 'Textbook_3':
  
-      plt.figure()
       ax11 = plt.subplot(5,3,1); ax12 = plt.subplot(5,3,2); ax13 = plt.subplot(5,3,3)
       ax21 = plt.subplot(5,3,4); ax22 = plt.subplot(5,3,5); ax23 = plt.subplot(5,3,6)
       ax31 = plt.subplot(5,3,7); ax32 = plt.subplot(5,3,8); ax33 = plt.subplot(5,3,9)
