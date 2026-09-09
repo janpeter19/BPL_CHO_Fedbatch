@@ -69,6 +69,8 @@ elif flag_vendor in ['OM', 'om']:
    BPL_version = 'Bioprocess Library version 2.3.2' 
 else:    
    print('There is no FMU for this platform')
+   
+#------------------------------------------------------------------------------------------------------------------   
 
 # Simulation time
 simulationTime = 120.0
