@@ -392,7 +392,7 @@ def newplot(title="Fedbatch cultivation", plotType="TimeSeries"):
         diagrams.append("ax[7].set_ylim(ax[6].get_ylim())")
 
 
-def describe(name, model=model, decimals=3):
+def describe(name, decimals=3):
     """Look up description of culture, media, as well as parameters and variables in the model code"""
 
     if name == "culture":
