@@ -369,13 +369,13 @@ def newplot(title="Fedbatch cultivation", plotType="TimeSeries"):
 
         diagrams.append("ax[2].set_title('- cell specific rates')")
         diagrams.append(
-            "ax[2].plot(t,-(sim_res['Fedbatch.bioreactor.culture.q[4]']+sim_res['bioreactor.culture.qG_over']), color='r', linestyle=linetype)"
+            "ax[2].plot(t,-(sim_res['Fedbatch.bioreactor.culture.q[4]']+sim_res['Fedbatch.bioreactor.culture.qG_over']), color='r', linestyle=linetype)"
         )
         diagrams.append(
             "ax[2].plot(t,-sim_res['Fedbatch.bioreactor.culture.q[4]'], color='b', linestyle=linetype)"
         )
         diagrams.append(
-            "ax[5].plot(t,-(sim_res['Fedbatch.bioreactor.culture.q[5]']+sim_res['bioreactor.culture.qGn_over']), color='r', linestyle=linetype)"
+            "ax[5].plot(t,-(sim_res['Fedbatch.bioreactor.culture.q[5]']+sim_res['Fedbatch.bioreactor.culture.qGn_over']), color='r', linestyle=linetype)"
         )
         diagrams.append(
             "ax[5].plot(t,-sim_res['Fedbatch.bioreactor.culture.q[5]'], color='b', linestyle=linetype)"
