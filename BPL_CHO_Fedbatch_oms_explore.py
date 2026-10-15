@@ -156,31 +156,31 @@ def newplot(title="Fedbatch cultivation", plotType="TimeSeries"):
         # List of commands to be executed by simu() after a simulation
         diagrams.clear()
         diagrams.append(
-            "ax[0].plot(t,sim_res['bioreactor.c[4]'], color='b', linestyle=linetype)"
+            "ax[0].plot(t,sim_res['Fedbatch.bioreactor.c[4]'], color='b', linestyle=linetype)"
         )
         diagrams.append(
-            "ax[1].plot(t,sim_res['bioreactor.c[6]'], color='r', linestyle=linetype)"
+            "ax[1].plot(t,sim_res['Fedbatch.bioreactor.c[6]'], color='r', linestyle=linetype)"
         )
         diagrams.append(
-            "ax[2].plot(t,sim_res['bioreactor.c[5]'], color='b', linestyle=linetype)"
+            "ax[2].plot(t,sim_res['Fedbatch.bioreactor.c[5]'], color='b', linestyle=linetype)"
         )
         diagrams.append(
-            "ax[3].plot(t,sim_res['bioreactor.c[7]'], color='r', linestyle=linetype)"
+            "ax[3].plot(t,sim_res['Fedbatch.bioreactor.c[7]'], color='r', linestyle=linetype)"
         )
         diagrams.append(
-            "ax[4].plot(t,sim_res['bioreactor.c[1]'], color='b', linestyle=linetype)"
+            "ax[4].plot(t,sim_res['Fedbatch.bioreactor.c[1]'], color='b', linestyle=linetype)"
         )
         diagrams.append(
-            "ax[5].plot(t,sim_res['bioreactor.c[2]'], color='r', linestyle=linetype)"
+            "ax[5].plot(t,sim_res['Fedbatch.bioreactor.c[2]'], color='r', linestyle=linetype)"
         )
         diagrams.append(
-            "ax[5].plot(t,sim_res['bioreactor.c[3]'], color='k', linestyle=linetype)"
+            "ax[5].plot(t,sim_res['Fedbatch.bioreactor.c[3]'], color='k', linestyle=linetype)"
         )
         diagrams.append(
-            "ax[6].plot(t,sim_res['bioreactor.inlet[1].F'], color='b', linestyle=linetype)"
+            "ax[6].plot(t,sim_res['Fedbatch.bioreactor.inlet[1].F'], color='b', linestyle=linetype)"
         )
         diagrams.append(
-            "ax[7].plot(t,sim_res['bioreactor.V'], color='b', linestyle=linetype)"
+            "ax[7].plot(t,sim_res['Fedbatch.bioreactor.V'], color='b', linestyle=linetype)"
         )
 
     # Plot diagram
@@ -236,31 +236,31 @@ def newplot(title="Fedbatch cultivation", plotType="TimeSeries"):
         # List of commands to be executed by simu() after a simulation
         diagrams.clear()
         diagrams.append(
-            "ax[0].plot(t,sim_res['bioreactor.c[4]'], color='b', linestyle=linetype)"
+            "ax[0].plot(t,sim_res['Fedbatch.bioreactor.c[4]'], color='b', linestyle=linetype)"
         )
         diagrams.append(
-            "ax[1].plot(t,sim_res['bioreactor.c[6]'], color='r', linestyle=linetype)"
+            "ax[1].plot(t,sim_res['Fedbatch.bioreactor.c[6]'], color='r', linestyle=linetype)"
         )
         diagrams.append(
-            "ax[2].plot(t,sim_res['bioreactor.c[5]'], color='b', linestyle=linetype)"
+            "ax[2].plot(t,sim_res['Fedbatch.bioreactor.c[5]'], color='b', linestyle=linetype)"
         )
         diagrams.append(
-            "ax[3].plot(t,sim_res['bioreactor.c[7]'], color='r', linestyle=linetype)"
+            "ax[3].plot(t,sim_res['Fedbatch.bioreactor.c[7]'], color='r', linestyle=linetype)"
         )
         diagrams.append(
-            "ax[4].plot(t,sim_res['bioreactor.m[1]'], color='b', linestyle=linetype)"
+            "ax[4].plot(t,sim_res['Fedbatch.bioreactor.m[1]'], color='b', linestyle=linetype)"
         )
         diagrams.append(
-            "ax[5].plot(t,sim_res['bioreactor.c[2]'], color='r', linestyle=linetype)"
+            "ax[5].plot(t,sim_res['Fedbatch.bioreactor.c[2]'], color='r', linestyle=linetype)"
         )
         diagrams.append(
-            "ax[5].plot(t,sim_res['bioreactor.c[3]'], color='k', linestyle=linetype)"
+            "ax[5].plot(t,sim_res['Fedbatch.bioreactor.c[3]'], color='k', linestyle=linetype)"
         )
         diagrams.append(
-            "ax[6].plot(t,sim_res['bioreactor.inlet[1].F'], color='b', linestyle=linetype)"
+            "ax[6].plot(t,sim_res['Fedbatch.bioreactor.inlet[1].F'], color='b', linestyle=linetype)"
         )
         diagrams.append(
-            "ax[7].plot(t,sim_res['bioreactor.V'], color='b', linestyle=linetype)"
+            "ax[7].plot(t,sim_res['Fedbatch.bioreactor.V'], color='b', linestyle=linetype)"
         )
 
     if plotType == "Textbook_3":
@@ -340,51 +340,51 @@ def newplot(title="Fedbatch cultivation", plotType="TimeSeries"):
         # List of commands to be executed by simu() after a simulation
         diagrams.clear()
         diagrams.append(
-            "ax[0].plot(t,sim_res['bioreactor.c[4]'], color='b', linestyle=linetype)"
+            "ax[0].plot(t,sim_res['Fedbatch.bioreactor.c[4]'], color='b', linestyle=linetype)"
         )
         diagrams.append(
-            "ax[1].plot(t,sim_res['bioreactor.c[6]'], color='r', linestyle=linetype)"
+            "ax[1].plot(t,sim_res['Fedbatch.bioreactor.c[6]'], color='r', linestyle=linetype)"
         )
         diagrams.append(
-            "ax[3].plot(t,sim_res['bioreactor.c[5]'], color='b', linestyle=linetype)"
+            "ax[3].plot(t,sim_res['Fedbatch.bioreactor.c[5]'], color='b', linestyle=linetype)"
         )
         diagrams.append(
-            "ax[4].plot(t,sim_res['bioreactor.c[7]'], color='r', linestyle=linetype)"
+            "ax[4].plot(t,sim_res['Fedbatch.bioreactor.c[7]'], color='r', linestyle=linetype)"
         )
         diagrams.append(
-            "ax[6].plot(t,sim_res['bioreactor.c[1]'], color='b', linestyle=linetype)"
+            "ax[6].plot(t,sim_res['Fedbatch.bioreactor.c[1]'], color='b', linestyle=linetype)"
         )
         diagrams.append(
-            "ax[7].plot(t,sim_res['bioreactor.c[2]'], color='r', linestyle=linetype)"
+            "ax[7].plot(t,sim_res['Fedbatch.bioreactor.c[2]'], color='r', linestyle=linetype)"
         )
         diagrams.append(
-            "ax[9].plot(t,sim_res['bioreactor.inlet[1].F'], color='b', linestyle=linetype)"
+            "ax[9].plot(t,sim_res['Fedbatch.bioreactor.inlet[1].F'], color='b', linestyle=linetype)"
         )
         diagrams.append(
-            "ax[10].plot(t,sim_res['bioreactor.c[8]'], color='g', linestyle=linetype)"
+            "ax[10].plot(t,sim_res['Fedbatch.bioreactor.c[8]'], color='g', linestyle=linetype)"
         )
         diagrams.append(
-            "ax[12].plot(t,sim_res['bioreactor.V'], color='b', linestyle=linetype)"
+            "ax[12].plot(t,sim_res['Fedbatch.bioreactor.V'], color='b', linestyle=linetype)"
         )
 
         diagrams.append("ax[2].set_title('- cell specific rates')")
         diagrams.append(
-            "ax[2].plot(t,-(sim_res['bioreactor.culture.q[4]']+sim_res['bioreactor.culture.qG_over']), color='r', linestyle=linetype)"
+            "ax[2].plot(t,-(sim_res['Fedbatch.bioreactor.culture.q[4]']+sim_res['bioreactor.culture.qG_over']), color='r', linestyle=linetype)"
         )
         diagrams.append(
-            "ax[2].plot(t,-sim_res['bioreactor.culture.q[4]'], color='b', linestyle=linetype)"
+            "ax[2].plot(t,-sim_res['Fedbatch.bioreactor.culture.q[4]'], color='b', linestyle=linetype)"
         )
         diagrams.append(
-            "ax[5].plot(t,-(sim_res['bioreactor.culture.q[5]']+sim_res['bioreactor.culture.qGn_over']), color='r', linestyle=linetype)"
+            "ax[5].plot(t,-(sim_res['Fedbatch.bioreactor.culture.q[5]']+sim_res['bioreactor.culture.qGn_over']), color='r', linestyle=linetype)"
         )
         diagrams.append(
-            "ax[5].plot(t,-sim_res['bioreactor.culture.q[5]'], color='b', linestyle=linetype)"
+            "ax[5].plot(t,-sim_res['Fedbatch.bioreactor.culture.q[5]'], color='b', linestyle=linetype)"
         )
         diagrams.append(
-            "ax[8].plot(t,sim_res['bioreactor.culture.q[1]'], color='b', linestyle=linetype)"
+            "ax[8].plot(t,sim_res['Fedbatch.bioreactor.culture.q[1]'], color='b', linestyle=linetype)"
         )
         diagrams.append(
-            "ax[11].plot(t,sim_res['bioreactor.culture.q[8]'], color='g', linestyle=linetype)"
+            "ax[11].plot(t,sim_res['Fedbatch.bioreactor.culture.q[8]'], color='g', linestyle=linetype)"
         )
 
         diagrams.append("ax[0].set_ylim(0)")
