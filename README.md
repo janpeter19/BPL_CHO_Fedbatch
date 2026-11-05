@@ -16,7 +16,6 @@ or alternatively
 [start BPL notebook with FMPy](https://colab.research.google.com/github/janpeter19/BPL_CHO_Fedbatch/blob/main/BPL_CHO_Fedbatch_fmpy_colab.ipynb)
 or (experimentally)
 [start BPL notebook with OMSimulator](https://colab.research.google.com/github/janpeter19/BPL_CHO_Fedbatch/blob/main/BPL_CHO_Fedbatch_oms_colab.ipynb).
-Then you in the menu choose Runtime/Run all. 
 
 Then you in the menu choose Runtime/Run all. 
 The subsequent execution of the simulations of CHO cultivation take just a second or so. 
