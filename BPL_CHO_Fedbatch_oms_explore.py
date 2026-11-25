@@ -7,6 +7,7 @@
 # 2026-09-22 - Change indentaiton from 3 spaces to 4 using black
 # 2026-10-15 - Import for oms related handling using DyMat
 # 2026-10-17 - Added clean-up section at the end
+# 2026-11-25 - Now component_list_minimum is handled as a parameter the class of FMU_explore
 # ------------------------------------------------------------------------------------------------------------------
 
 # -------------------------------------------------------------------------------------------------
@@ -399,6 +400,9 @@ def describe(name, decimals=3):
     if name == "culture":
         print("Reactor culture CHO-MAb - cell line HB-58 American Culture Collection ATCC")
 
+    elif name in ['parts']:
+        describe_parts()
+
     elif name in ["MSL"]:
         describe_MSL()
 
@@ -418,7 +422,7 @@ FMU_explore_info()
 #------------------------------------------------------------------------------------------------------------------
 
 del parValue, parLocation, parCheck
-del fmu_model, fmu_process_diagram
+del fmu_model, fmu_process_diagram, component_list_minimum
 del MSL_usage, MSL_version, BPL_version
 del options, simulationTime, timeDiscreteStates
 del flag_type, flag_vendor
